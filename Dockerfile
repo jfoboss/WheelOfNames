@@ -1,9 +1,9 @@
-# Базовый образ можно тянуть через прокси-кэш Harbor:
+# The base image can be pulled through a Harbor proxy cache:
 #   docker build --build-arg BASE_IMAGE=harbor.example.local/dockerhub/nginxinc/nginx-unprivileged:1.28-alpine .
 ARG BASE_IMAGE=nginxinc/nginx-unprivileged:1.28-alpine
 FROM ${BASE_IMAGE}
 
-# Версия попадает в имя кэша service worker; каждая сборка => клиенты получают обновление
+# The version goes into the service worker cache name; every build => clients get an update
 ARG APP_VERSION=""
 
 COPY nginx/default.conf /etc/nginx/conf.d/default.conf

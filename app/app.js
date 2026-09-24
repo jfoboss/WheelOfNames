@@ -46,7 +46,7 @@
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   const darkScheme = window.matchMedia('(prefers-color-scheme: dark)');
 
-  // ---------- состояние ----------
+  // ---------- state ----------
   const state = loadState();
   let entries = parseEntries(state.text);
   let rotation = 0;
@@ -76,7 +76,7 @@
   function saveState() {
     clearTimeout(saveTimer);
     saveTimer = setTimeout(() => {
-      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch { /* приватный режим / квота */ }
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch { /* private mode / quota */ }
     }, 150);
   }
 
@@ -99,14 +99,14 @@
     saveState();
   }
 
-  // ---------- честный случай ----------
+  // ---------- fair randomness ----------
   function randomUint32() {
     const a = new Uint32Array(1);
     crypto.getRandomValues(a);
     return a[0];
   }
 
-  // Равномерно на [0, n) без смещения по модулю
+  // Uniform on [0, n) without modulo bias
   function randomInt(n) {
     const limit = Math.floor(0x100000000 / n) * n;
     let x;
@@ -129,10 +129,10 @@
 
   const mod = (a, n) => ((a % n) + n) % n;
 
-  // ---------- отрисовка колеса ----------
+  // ---------- wheel rendering ----------
   function segmentColor(i, n) {
     let c = i % PALETTE.length;
-    // последний сектор не должен совпасть по цвету с первым
+    // the last sector must not share its color with the first one
     if (n > 1 && i === n - 1 && c === 0) c = 2;
     return PALETTE[c];
   }
@@ -172,7 +172,7 @@
     draw();
   }
 
-  // Колесо рисуется один раз в offscreen-canvas; при вращении только поворачиваем картинку
+  // The wheel is drawn once into an offscreen canvas; spinning only rotates the bitmap
   function renderBitmap() {
     const S = el.wheel.width;
     if (!S) return;
@@ -230,12 +230,12 @@
       }
     }
 
-    // Подписи: радиально, прижаты к внешнему краю
+    // Labels: radial, aligned to the outer edge
     const inner = R * 0.26;
-    const outerPad = R * 0.1; // место под указатель
+    const outerPad = R * 0.1; // room for the pointer
     const maxWidth = R - inner - outerPad;
     const fontPx = n === 1 ? R * 0.1 : Math.min(R * 0.085, seg * R * 0.6);
-    if (fontPx < 7 * dpr) return; // слишком много секторов — текст нечитаем
+    if (fontPx < 7 * dpr) return; // too many sectors, text would be unreadable
     ctx.font = `600 ${fontPx}px ${fontFamily}`;
     ctx.textAlign = 'right';
     ctx.textBaseline = 'middle';
@@ -260,12 +260,12 @@
     ctx.drawImage(bitmap, -S / 2, -S / 2);
   }
 
-  // Указатель справа (угол 0). Какой сектор под ним при повороте rot:
+  // The pointer is on the right (angle 0). Which sector is under it at rotation rot:
   function indexAt(rot, n) {
     return Math.floor(mod(-rot, TAU) / (TAU / n)) % n;
   }
 
-  // ---------- звук ----------
+  // ---------- sound ----------
   const audio = (() => {
     let ctx = null;
     let last = 0;
@@ -318,9 +318,9 @@
     el.pointer.animate([{ rotate: '-20deg' }, { rotate: '0deg' }], { duration: 110, easing: 'ease-out' });
   }
 
-  // ---------- вращение ----------
-  // Победитель выбирается ДО анимации через crypto.getRandomValues,
-  // затем вычисляется угол остановки внутри его сектора.
+  // ---------- spinning ----------
+  // The winner is chosen BEFORE the animation via crypto.getRandomValues,
+  // then the stop angle is computed inside the winner's sector.
   const easeOut = (t) => 1 - Math.pow(1 - t, 4);
 
   function spin() {
@@ -331,7 +331,7 @@
     const n = snapshot.length;
     const seg = TAU / n;
     const winner = randomInt(n);
-    const offset = (0.12 + 0.76 * randomFloat()) * seg; // не у самой границы сектора
+    const offset = (0.12 + 0.76 * randomFloat()) * seg; // not right at the sector boundary
     const target = -(winner * seg + offset);
     const start = rotation;
     const quick = reduceMotion.matches;
@@ -405,7 +405,7 @@
     document.body.classList.toggle('is-spinning', spinning);
   }
 
-  // ---------- результаты ----------
+  // ---------- results ----------
   const timeFmt = new Intl.DateTimeFormat('ru-RU', { hour: '2-digit', minute: '2-digit' });
 
   function renderResults() {
@@ -428,7 +428,7 @@
     el.results.scrollTop = el.results.scrollHeight;
   }
 
-  // ---------- конфетти ----------
+  // ---------- confetti ----------
   const confetti = (() => {
     const ctx = el.confetti.getContext('2d');
     let parts = [];
@@ -489,7 +489,7 @@
     return { burst };
   })();
 
-  // ---------- уведомления ----------
+  // ---------- toasts ----------
   let toastTimer = 0;
   function toast(text, action) {
     clearTimeout(toastTimer);
@@ -505,7 +505,7 @@
     if (!action) toastTimer = setTimeout(() => { el.toast.hidden = true; }, 2600);
   }
 
-  // ---------- ссылка со списком ----------
+  // ---------- share link ----------
   function toBase64Url(str) {
     const bytes = new TextEncoder().encode(str);
     let bin = '';
@@ -522,7 +522,7 @@
 
   async function shareList() {
     const code = toBase64Url(JSON.stringify({ t: state.title, e: entries }));
-    // список идёт во фрагменте (#), на сервер он не отправляется
+    // the list goes into the fragment (#), so it is never sent to the server
     const url = `${location.origin}${location.pathname}#list=${code}`;
     try {
       await navigator.clipboard.writeText(url);
@@ -548,7 +548,7 @@
     history.replaceState(null, '', location.pathname + location.search);
   }
 
-  // Ссылку открыли во вкладке, где приложение уже запущено
+  // The link was opened in a tab where the app is already running
   function onHashChange() {
     if (spinning || el.dialog.open || !location.hash.startsWith('#list=')) return;
     importFromHash();
@@ -558,7 +558,7 @@
     onEntriesChanged();
   }
 
-  // ---------- вкладки ----------
+  // ---------- tabs ----------
   function setupTabs() {
     const tabs = Array.from(document.querySelectorAll('[role="tab"]'));
     const select = (tab) => {
@@ -614,12 +614,12 @@
           if (document.visibilityState === 'visible') reg.update().catch(() => {});
         });
       } catch (err) {
-        console.warn('Service worker не зарегистрирован:', err);
+        console.warn('Service worker registration failed:', err);
       }
     });
   }
 
-  // ---------- инициализация ----------
+  // ---------- init ----------
   function init() {
     importFromHash();
 
@@ -722,7 +722,7 @@
     onEntriesChanged();
     renderResults();
 
-    // стартовое положение: указатель в середине первого сектора, а не на границе
+    // initial position: pointer in the middle of the first sector, not on a boundary
     if (entries.length) {
       rotation = -Math.PI / entries.length;
       draw();

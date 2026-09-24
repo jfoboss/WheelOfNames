@@ -1,4 +1,4 @@
-Колесо имён:
+Wheel of Names:
 {{- if .Values.ingress.enabled }}
 {{- range .Values.ingress.hosts }}
   https://{{ .host }}{{ (first .paths).path }}

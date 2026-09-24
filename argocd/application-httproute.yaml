@@ -1,5 +1,5 @@
-# Вариант ArgoCD Application: Gateway API (HTTPRoute) + Traefik вместо Ingress.
-# Использовать ВМЕСТО application.yaml, не вместе с ним (имя Application то же).
+# ArgoCD Application variant: Gateway API (HTTPRoute) + Traefik instead of Ingress.
+# Use INSTEAD of application.yaml, not together with it (same Application name).
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -31,7 +31,7 @@ spec:
               sectionName: websecure
           hostnames:
             - wheel.example.local
-        # Свои Middleware: создаются в namespace приложения и подключаются к HTTPRoute
+        # Custom Middlewares: created in the app namespace and attached to the HTTPRoute
         traefikMiddlewares:
           - name: security-headers
             spec:

@@ -1,6 +1,6 @@
-# ArgoCD Application для Колеса имён.
-# Чарт берётся прямо из этого репозитория (helm/wheel-of-names).
-# Вариант с чартом в OCI-registry (Harbor) — см. README, раздел «Деплой».
+# ArgoCD Application for Wheel of Names (Ingress variant).
+# The chart is taken directly from this repository (helm/wheel-of-names).
+# For the chart in an OCI registry (Harbor), see the deployment section in README.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -16,7 +16,7 @@ spec:
     path: helm/wheel-of-names
     helm:
       releaseName: wheel-of-names
-      # Значения под окружение; всё остальное — дефолты из values.yaml чарта
+      # Environment-specific values; everything else comes from the chart's values.yaml
       valuesObject:
         image:
           repository: harbor.example.local/tools/wheel-of-names

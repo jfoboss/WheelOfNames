@@ -1,7 +1,7 @@
 'use strict';
 
-// __APP_VERSION__ подставляется при сборке образа (см. Dockerfile).
-// Новая версия => новый кэш => клиенты получают обновление.
+// __APP_VERSION__ is substituted when the image is built (see Dockerfile).
+// New version => new cache => clients get the update.
 const VERSION = '__APP_VERSION__';
 const CACHE_PREFIX = 'wheel-of-names-';
 const CACHE = CACHE_PREFIX + VERSION;
@@ -37,7 +37,7 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Cache-first: приложение работает офлайн, обновление приходит с новой версией sw.js
+// Cache-first: the app works offline, updates arrive with a new sw.js version
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;

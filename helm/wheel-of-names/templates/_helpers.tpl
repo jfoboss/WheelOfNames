@@ -27,7 +27,7 @@ app.kubernetes.io/version: {{ .Values.image.tag | default .Chart.AppVersion | qu
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end }}
 
-{{/* Имя ресурса Traefik Middleware из traefikMiddlewares */}}
+{{/* Resource name of a Traefik Middleware from traefikMiddlewares */}}
 {{- define "wheel-of-names.middlewareName" -}}
 {{- printf "%s-%s" (include "wheel-of-names.fullname" .root) .name | trunc 63 | trimSuffix "-" }}
 {{- end }}
