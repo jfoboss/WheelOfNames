@@ -51,7 +51,7 @@ button, input, textarea { font: inherit; color: inherit; }
   outline-offset: 2px;
 }
 
-/* ---------- верхняя панель ---------- */
+/* ---------- top bar ---------- */
 .bar {
   display: flex;
   align-items: center;
@@ -76,7 +76,7 @@ button, input, textarea { font: inherit; color: inherit; }
 
 .bar-actions { display: flex; gap: 8px; }
 
-/* ---------- кнопки ---------- */
+/* ---------- buttons ---------- */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -105,7 +105,7 @@ button, input, textarea { font: inherit; color: inherit; }
 .row { display: flex; flex-wrap: wrap; gap: 8px; }
 .row-center { justify-content: center; }
 
-/* ---------- раскладка ---------- */
+/* ---------- layout ---------- */
 .layout {
   flex: 1;
   display: grid;
@@ -123,7 +123,7 @@ button, input, textarea { font: inherit; color: inherit; }
   min-width: 0;
 }
 
-/* ---------- колесо ---------- */
+/* ---------- wheel ---------- */
 .wheel-wrap {
   position: relative;
   width: min(100%, calc(100vh - 150px), 860px);
@@ -185,7 +185,7 @@ button, input, textarea { font: inherit; color: inherit; }
   text-align: center;
 }
 
-/* ---------- боковая панель ---------- */
+/* ---------- side panel ---------- */
 .panel {
   display: flex;
   flex-direction: column;
@@ -253,7 +253,7 @@ button, input, textarea { font: inherit; color: inherit; }
 .entries:focus-visible { outline-offset: 0; border-color: var(--focus); }
 .entries[readonly] { opacity: 0.7; }
 
-/* ---------- результаты ---------- */
+/* ---------- results ---------- */
 .results {
   flex: 1;
   margin: 0;
@@ -269,7 +269,7 @@ button, input, textarea { font: inherit; color: inherit; }
 
 .empty { flex: 1; margin: 0; color: var(--muted); }
 
-/* ---------- настройки ---------- */
+/* ---------- settings ---------- */
 .settings { gap: 16px; }
 .field { display: flex; flex-direction: column; gap: 6px; }
 .field-head { display: flex; justify-content: space-between; font-weight: 600; }
@@ -279,7 +279,7 @@ button, input, textarea { font: inherit; color: inherit; }
 .check input { width: 18px; height: 18px; margin: 0; accent-color: var(--focus); }
 .note { margin: auto 0 0; color: var(--muted); font-size: 14px; }
 
-/* ---------- окно победителя ---------- */
+/* ---------- winner dialog ---------- */
 .winner-dialog {
   width: min(520px, calc(100vw - 32px));
   max-width: none;
@@ -328,7 +328,7 @@ button, input, textarea { font: inherit; color: inherit; }
   to { opacity: 1; scale: 1; }
 }
 
-/* ---------- уведомление ---------- */
+/* ---------- toast ---------- */
 .toast {
   position: fixed;
   left: 50%;
@@ -356,7 +356,7 @@ button, input, textarea { font: inherit; color: inherit; }
   cursor: pointer;
 }
 
-/* ---------- полноэкранный режим: только колесо ---------- */
+/* ---------- fullscreen mode: wheel only ---------- */
 .focus .panel,
 .focus #shareBtn,
 .focus #installBtn { display: none; }
@@ -366,7 +366,7 @@ button, input, textarea { font: inherit; color: inherit; }
   width: min(100%, calc(100dvh - 130px));
 }
 
-/* ---------- узкие экраны ---------- */
+/* ---------- narrow screens ---------- */
 @media (max-width: 860px) {
   .bar { flex-wrap: wrap; padding: 12px 16px 8px; }
   .title { flex-basis: 100%; }

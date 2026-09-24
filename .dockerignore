@@ -1,4 +1,6 @@
-k8s/
+helm/
+argocd/
 tools/
 README.md
+CLAUDE.md
 .git

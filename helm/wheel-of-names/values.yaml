@@ -1,0 +1,113 @@
+replicaCount: 2
+
+image:
+  repository: harbor.example.local/tools/wheel-of-names
+  # Defaults to appVersion from Chart.yaml
+  tag: ""
+  pullPolicy: IfNotPresent
+
+# If the Harbor project is private:
+# imagePullSecrets:
+#   - name: harbor-pull
+imagePullSecrets: []
+
+nameOverride: ""
+fullnameOverride: ""
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 101
+  runAsGroup: 101
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: ["ALL"]
+
+resources:
+  requests:
+    cpu: 10m
+    memory: 16Mi
+  limits:
+    memory: 64Mi
+
+# emptyDir on /tmp: nginx-unprivileged writes its pid and temp files there
+tmpVolume:
+  medium: Memory
+  sizeLimit: 16Mi
+
+service:
+  type: ClusterIP
+  port: 80
+
+# PWA and service worker only work over HTTPS with a certificate trusted by browsers
+# (the corporate CA must be trusted on workstations).
+ingress:
+  enabled: true
+  className: nginx
+  annotations: {}
+    # cert-manager.io/cluster-issuer: corp-ca-issuer
+  hosts:
+    - host: wheel.example.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: wheel-of-names-tls
+      hosts:
+        - wheel.example.local
+
+# Gateway API, an alternative to Ingress. Usually only one of them is enabled:
+#   ingress.enabled: false, httpRoute.enabled: true
+httpRoute:
+  enabled: false
+  annotations: {}
+  # Gateway (and listener) to attach to
+  parentRefs:
+    - name: traefik-gateway
+      namespace: traefik
+      # sectionName: websecure
+  hostnames:
+    - wheel.example.local
+  # Route matches; default is everything under /
+  matches:
+    - path:
+        type: PathPrefix
+        value: /
+  # Extra rule filters (RequestHeaderModifier, ExtensionRef to an existing Middleware, etc.).
+  # Middlewares from traefikMiddlewares below are attached automatically, do not list them here.
+  filters: []
+
+# Custom Traefik Middlewares (traefik.io/v1alpha1) created by the chart.
+# Resource name: <fullname>-<name>. They are attached automatically:
+#   - to the HTTPRoute as ExtensionRef filters;
+#   - to the Ingress via the traefik.ingress.kubernetes.io/router.middlewares annotation
+#     (if traefikMiddlewaresAttachToIngress: true).
+# spec is passed through as is, see the Traefik docs.
+traefikMiddlewares: []
+#  - name: ip-allowlist
+#    spec:
+#      ipAllowList:
+#        sourceRange:
+#          - 10.0.0.0/8
+#  - name: security-headers
+#    spec:
+#      headers:
+#        stsSeconds: 31536000
+#        stsIncludeSubdomains: true
+traefikMiddlewaresAttachToIngress: true
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+# Empty => soft pod anti-affinity by node (spread replicas across nodes when possible)
+affinity: {}
+nodeSelector: {}
+tolerations: []

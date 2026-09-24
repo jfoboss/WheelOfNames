@@ -5,11 +5,13 @@
 ## Структура
 - `app/` — вся статика: `index.html`, `app.js` (вся логика, IIFE, без сборки), `styles.css`, `sw.js`, `manifest.webmanifest`, `icons/`
 - `nginx/default.conf` + `nginx/headers.conf` — конфиг и заголовки безопасности
-- `k8s/` — kustomize: namespace, deployment, pdb, service, ingress
+- `helm/wheel-of-names/` — Helm-чарт: deployment, service, pdb, Ingress или HTTPRoute (Gateway API), Traefik Middleware из `traefikMiddlewares` (namespace не создаёт)
+- `argocd/application.yaml` (Ingress) и `argocd/application-httproute.yaml` (HTTPRoute + Traefik) — варианты ArgoCD Application: чарт из git, значения под окружение в `valuesObject`
 - `tools/gen_icons.py` — генерация иконок (Pillow)
 - `Dockerfile` — `nginx-unprivileged`, порт 8080, uid 101
 
 ## Принятые решения (не ломать без причины)
+- **Язык: в коде — английский** (комментарии, сообщения ошибок `required`/`fail` в чарте, логи, `description` в Chart.yaml, NOTES). По-русски — только тексты интерфейса приложения и документация (README, CLAUDE.md).
 - **Никаких внешних зависимостей, CDN, шрифтов и сборщиков.** Приложение должно работать в закрытом контуре и офлайн.
 - **CSP `'self'` без inline.** Никаких `<script>` и `style="…"` в HTML. Стили из JS задавать только через CSSOM (`el.style.setProperty`).
 - **Только относительные пути**, чтобы приложение работало и в подпути за ingress.
@@ -28,9 +30,11 @@
   - офлайн-перезагрузка работает;
   - в 40 вращениях цвет сектора под указателем совпал с выпавшим именем.
 - `nginx -t` и отдача заголовков проверены.
-- **Не проверялись** `docker build` и `kubectl apply -k k8s/`: в той среде не было docker и кластера.
+- Чарт: `helm lint --strict`, `helm template` и kubeconform (в т.ч. Application, HTTPRoute и Traefik Middleware по схемам CRD из datreeio/CRDs-catalog) проходят.
+- **Middleware из `traefikMiddlewares` подключаются автоматически**: к HTTPRoute через `ExtensionRef`, к Ingress через аннотацию `router.middlewares` (`<ns>-<name>@kubernetescrd`). При изменении шаблонов поднимать `version` в `Chart.yaml`.
+- **Не проверялись** `docker build` и реальный деплой в кластер: не было docker-демона и кластера.
 
 ## Что подставить под окружение
-- `k8s/kustomization.yaml` → `images`: реестр Harbor и тег
-- `k8s/ingress.yaml` → хост, `ingressClassName`, TLS. Сертификат должен быть от CA, которому доверяют рабочие станции, иначе PWA не установится.
+- `argocd/application*.yaml` → `repoURL` (зеркало, если ArgoCD не ходит на GitHub) и `valuesObject`: `image.repository`/`image.tag`, `imagePullSecrets`
+- там же `ingress` (хост, `className`, TLS) или `httpRoute` (`parentRefs` на ваш Gateway, `hostnames`). Сертификат должен быть от CA, которому доверяют рабочие станции, иначе PWA не установится.
 - `Dockerfile` → `BASE_IMAGE` через прокси-кэш Harbor

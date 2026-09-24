@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Генерирует иконки PWA (PNG + SVG) в app/icons. Нужен Pillow: pip install pillow"""
+"""Generates PWA icons (PNG + SVG) into app/icons. Requires Pillow: pip install pillow"""
 import math
 from pathlib import Path
 
@@ -12,7 +12,7 @@ PALETTE = ["#2F5DE0", "#FFC21A", "#E4572E", "#16A08F", "#7B4FD8", "#F08A24"]
 INK = "#18213A"
 RIM = "#FFFFFF"
 HUB = "#FFC21A"
-SS = 4  # суперсэмплинг для сглаживания
+SS = 4  # supersampling for anti-aliasing
 
 
 def draw_wheel(size, wheel_frac, bg_radius_frac, full_bleed=False):
@@ -24,7 +24,7 @@ def draw_wheel(size, wheel_frac, bg_radius_frac, full_bleed=False):
     else:
         d.rounded_rectangle([0, 0, S - 1, S - 1], radius=int(S * bg_radius_frac), fill=INK)
     cy = S / 2
-    cx = S / 2 - S * 0.02  # чуть влево, чтобы поместился указатель
+    cx = S / 2 - S * 0.02  # shifted left a bit to fit the pointer
     r = S * wheel_frac
     rim = max(2, S * 0.018)
     d.ellipse([cx - r - rim, cy - r - rim, cx + r + rim, cy + r + rim], fill=RIM)
@@ -34,7 +34,7 @@ def draw_wheel(size, wheel_frac, bg_radius_frac, full_bleed=False):
     hr = r * 0.22
     d.ellipse([cx - hr - rim, cy - hr - rim, cx + hr + rim, cy + hr + rim], fill=RIM)
     d.ellipse([cx - hr, cy - hr, cx + hr, cy + hr], fill=HUB)
-    # указатель справа, смотрит влево
+    # pointer on the right, pointing left
     tip_x = cx + r * 0.86
     base_x = cx + r + S * 0.075
     hh = r * 0.17
@@ -68,9 +68,9 @@ def svg():
 if __name__ == "__main__":
     draw_wheel(192, 0.36, 0.22).save(OUT / "icon-192.png", optimize=True)
     draw_wheel(512, 0.36, 0.22).save(OUT / "icon-512.png", optimize=True)
-    # maskable: фон до краёв, колесо внутри безопасной зоны (круг 80%)
+    # maskable: full-bleed background, wheel inside the safe zone (80% circle)
     draw_wheel(512, 0.30, 0, full_bleed=True).save(OUT / "icon-maskable-512.png", optimize=True)
-    # apple-touch-icon: iOS сам скругляет углы, поэтому фон до краёв
+    # apple-touch-icon: iOS rounds the corners itself, so full-bleed background
     draw_wheel(180, 0.34, 0, full_bleed=True).convert("RGB").save(OUT / "apple-touch-icon.png", optimize=True)
     (OUT / "favicon.svg").write_text(svg(), encoding="utf-8")
     print("icons ->", OUT)

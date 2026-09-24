@@ -1,0 +1,48 @@
+{{- if .Values.ingress.enabled }}
+{{- $fullName := include "wheel-of-names.fullname" . }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $fullName }}
+  labels:
+    {{- include "wheel-of-names.labels" . | nindent 4 }}
+  {{- $annotations := deepCopy (.Values.ingress.annotations | default dict) }}
+  {{- if and .Values.traefikMiddlewares .Values.traefikMiddlewaresAttachToIngress }}
+  {{- $mws := list }}
+  {{- range .Values.traefikMiddlewares }}
+  {{- $mws = append $mws (printf "%s-%s@kubernetescrd" $.Release.Namespace (include "wheel-of-names.middlewareName" (dict "root" $ "name" .name))) }}
+  {{- end }}
+  {{- $key := "traefik.ingress.kubernetes.io/router.middlewares" }}
+  {{- if hasKey $annotations $key }}
+  {{- $mws = prepend $mws (get $annotations $key) }}
+  {{- end }}
+  {{- $_ := set $annotations $key (join "," $mws) }}
+  {{- end }}
+  {{- with $annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- with .Values.ingress.className }}
+  ingressClassName: {{ . }}
+  {{- end }}
+  {{- with .Values.ingress.tls }}
+  tls:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  rules:
+    {{- range .Values.ingress.hosts }}
+    - host: {{ .host | quote }}
+      http:
+        paths:
+          {{- range .paths }}
+          - path: {{ .path }}
+            pathType: {{ .pathType }}
+            backend:
+              service:
+                name: {{ $fullName }}
+                port:
+                  name: http
+          {{- end }}
+    {{- end }}
+{{- end }}

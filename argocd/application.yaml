@@ -1,0 +1,47 @@
+# ArgoCD Application for Wheel of Names (Ingress variant).
+# The chart is taken directly from this repository (helm/wheel-of-names).
+# For the chart in an OCI registry (Harbor), see the deployment section in README.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: wheel-of-names
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/jfoboss/WheelOfNames.git
+    targetRevision: main
+    path: helm/wheel-of-names
+    helm:
+      releaseName: wheel-of-names
+      # Environment-specific values; everything else comes from the chart's values.yaml
+      valuesObject:
+        image:
+          repository: harbor.example.local/tools/wheel-of-names
+          tag: "1.0.0"
+        # imagePullSecrets:
+        #   - name: harbor-pull
+        ingress:
+          className: nginx
+          # annotations:
+          #   cert-manager.io/cluster-issuer: corp-ca-issuer
+          hosts:
+            - host: wheel.example.local
+              paths:
+                - path: /
+                  pathType: Prefix
+          tls:
+            - secretName: wheel-of-names-tls
+              hosts:
+                - wheel.example.local
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: wheel-of-names
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
