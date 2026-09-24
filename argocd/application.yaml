@@ -1,0 +1,47 @@
+# ArgoCD Application для Колеса имён.
+# Чарт берётся прямо из этого репозитория (helm/wheel-of-names).
+# Вариант с чартом в OCI-registry (Harbor) — см. README, раздел «Деплой».
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: wheel-of-names
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/jfoboss/WheelOfNames.git
+    targetRevision: main
+    path: helm/wheel-of-names
+    helm:
+      releaseName: wheel-of-names
+      # Значения под окружение; всё остальное — дефолты из values.yaml чарта
+      valuesObject:
+        image:
+          repository: harbor.example.local/tools/wheel-of-names
+          tag: "1.0.0"
+        # imagePullSecrets:
+        #   - name: harbor-pull
+        ingress:
+          className: nginx
+          # annotations:
+          #   cert-manager.io/cluster-issuer: corp-ca-issuer
+          hosts:
+            - host: wheel.example.local
+              paths:
+                - path: /
+                  pathType: Prefix
+          tls:
+            - secretName: wheel-of-names-tls
+              hosts:
+                - wheel.example.local
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: wheel-of-names
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

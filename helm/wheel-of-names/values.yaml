@@ -1,0 +1,73 @@
+replicaCount: 2
+
+image:
+  repository: harbor.example.local/tools/wheel-of-names
+  # По умолчанию берётся appVersion из Chart.yaml
+  tag: ""
+  pullPolicy: IfNotPresent
+
+# Если проект в Harbor приватный:
+# imagePullSecrets:
+#   - name: harbor-pull
+imagePullSecrets: []
+
+nameOverride: ""
+fullnameOverride: ""
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 101
+  runAsGroup: 101
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: ["ALL"]
+
+resources:
+  requests:
+    cpu: 10m
+    memory: 16Mi
+  limits:
+    memory: 64Mi
+
+# emptyDir на /tmp: nginx-unprivileged пишет туда pid и temp-файлы
+tmpVolume:
+  medium: Memory
+  sizeLimit: 16Mi
+
+service:
+  type: ClusterIP
+  port: 80
+
+# PWA и service worker работают только по HTTPS с сертификатом, которому доверяют браузеры
+# (корпоративный CA должен быть в доверенных на рабочих станциях).
+ingress:
+  enabled: true
+  className: nginx
+  annotations: {}
+    # cert-manager.io/cluster-issuer: corp-ca-issuer
+  hosts:
+    - host: wheel.example.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: wheel-of-names-tls
+      hosts:
+        - wheel.example.local
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+# Пустое значение => мягкая anti-affinity по узлам (реплики на разных нодах, если можно)
+affinity: {}
+nodeSelector: {}
+tolerations: []

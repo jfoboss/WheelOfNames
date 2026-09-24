@@ -1,0 +1,8 @@
+apiVersion: v2
+name: wheel-of-names
+description: Колесо имён — статическое PWA на nginx-unprivileged
+type: application
+# Версия чарта: поднимать при любом изменении шаблонов/values
+version: 0.1.0
+# Тег образа по умолчанию (если не задан image.tag)
+appVersion: "1.0.0"

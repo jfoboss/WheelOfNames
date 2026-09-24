@@ -5,7 +5,8 @@
 ## Структура
 - `app/` — вся статика: `index.html`, `app.js` (вся логика, IIFE, без сборки), `styles.css`, `sw.js`, `manifest.webmanifest`, `icons/`
 - `nginx/default.conf` + `nginx/headers.conf` — конфиг и заголовки безопасности
-- `k8s/` — kustomize: namespace, deployment, pdb, service, ingress
+- `helm/wheel-of-names/` — Helm-чарт: deployment, service, ingress, pdb (namespace не создаёт)
+- `argocd/application.yaml` — ArgoCD Application: чарт из git, значения под окружение в `valuesObject`
 - `tools/gen_icons.py` — генерация иконок (Pillow)
 - `Dockerfile` — `nginx-unprivileged`, порт 8080, uid 101
 
@@ -28,9 +29,10 @@
   - офлайн-перезагрузка работает;
   - в 40 вращениях цвет сектора под указателем совпал с выпавшим именем.
 - `nginx -t` и отдача заголовков проверены.
-- **Не проверялись** `docker build` и `kubectl apply -k k8s/`: в той среде не было docker и кластера.
+- Чарт: `helm lint --strict`, `helm template` и kubeconform (в т.ч. Application по схеме CRD ArgoCD) проходят.
+- **Не проверялись** `docker build` и реальный деплой в кластер: не было docker-демона и кластера.
 
 ## Что подставить под окружение
-- `k8s/kustomization.yaml` → `images`: реестр Harbor и тег
-- `k8s/ingress.yaml` → хост, `ingressClassName`, TLS. Сертификат должен быть от CA, которому доверяют рабочие станции, иначе PWA не установится.
+- `argocd/application.yaml` → `repoURL` (зеркало, если ArgoCD не ходит на GitHub) и `valuesObject`: `image.repository`/`image.tag`, `imagePullSecrets`
+- там же `ingress`: хост, `className`, TLS. Сертификат должен быть от CA, которому доверяют рабочие станции, иначе PWA не установится.
 - `Dockerfile` → `BASE_IMAGE` через прокси-кэш Harbor
