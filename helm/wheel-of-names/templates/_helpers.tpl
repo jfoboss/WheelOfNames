@@ -26,3 +26,8 @@ helm.sh/chart: {{ printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | 
 app.kubernetes.io/version: {{ .Values.image.tag | default .Chart.AppVersion | quote }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end }}
+
+{{/* Имя ресурса Traefik Middleware из traefikMiddlewares */}}
+{{- define "wheel-of-names.middlewareName" -}}
+{{- printf "%s-%s" (include "wheel-of-names.fullname" .root) .name | trunc 63 | trimSuffix "-" }}
+{{- end }}

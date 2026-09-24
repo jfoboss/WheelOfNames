@@ -1,0 +1,11 @@
+{{- range .Values.traefikMiddlewares }}
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: {{ include "wheel-of-names.middlewareName" (dict "root" $ "name" (required "traefikMiddlewares[].name обязателен" .name)) }}
+  labels:
+    {{- include "wheel-of-names.labels" $ | nindent 4 }}
+spec:
+  {{- toYaml (required "traefikMiddlewares[].spec обязателен" .spec) | nindent 2 }}
+{{- end }}

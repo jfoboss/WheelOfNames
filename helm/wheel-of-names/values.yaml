@@ -63,6 +63,45 @@ ingress:
       hosts:
         - wheel.example.local
 
+# Gateway API — альтернатива Ingress. Обычно включают что-то одно:
+#   ingress.enabled: false, httpRoute.enabled: true
+httpRoute:
+  enabled: false
+  annotations: {}
+  # К какому Gateway (и listener'у) цепляться
+  parentRefs:
+    - name: traefik-gateway
+      namespace: traefik
+      # sectionName: websecure
+  hostnames:
+    - wheel.example.local
+  # Условия маршрута; по умолчанию — всё под /
+  matches:
+    - path:
+        type: PathPrefix
+        value: /
+  # Дополнительные фильтры правила (RequestHeaderModifier, ExtensionRef на уже существующий Middleware и т.п.).
+  # Middleware из traefikMiddlewares ниже подключаются автоматически, их сюда писать не нужно.
+  filters: []
+
+# Кастомные Traefik Middleware (traefik.io/v1alpha1), которые создаёт чарт.
+# Имя ресурса: <fullname>-<name>. Подключаются автоматически:
+#   - к HTTPRoute — фильтром ExtensionRef;
+#   - к Ingress — аннотацией traefik.ingress.kubernetes.io/router.middlewares (если attachToIngress: true).
+# spec — как в документации Traefik, без изменений.
+traefikMiddlewares: []
+#  - name: ip-allowlist
+#    spec:
+#      ipAllowList:
+#        sourceRange:
+#          - 10.0.0.0/8
+#  - name: security-headers
+#    spec:
+#      headers:
+#        stsSeconds: 31536000
+#        stsIncludeSubdomains: true
+traefikMiddlewaresAttachToIngress: true
+
 podDisruptionBudget:
   enabled: true
   minAvailable: 1

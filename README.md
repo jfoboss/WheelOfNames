@@ -20,8 +20,8 @@
 ```
 app/              статика: index.html, app.js, styles.css, sw.js, manifest.webmanifest, icons/
 nginx/            конфиг nginx + заголовки безопасности (CSP и т.п.)
-helm/wheel-of-names/  Helm-чарт: deployment, service, ingress, pdb
-argocd/application.yaml  ArgoCD Application для чарта
+helm/wheel-of-names/  Helm-чарт: deployment, service, pdb, ingress или HTTPRoute, Traefik Middleware
+argocd/               ArgoCD Application: application.yaml (Ingress), application-httproute.yaml (Gateway API + Traefik)
 tools/gen_icons.py  генерация иконок (Pillow)
 Dockerfile
 ```
@@ -55,10 +55,48 @@ docker push harbor.example.local/tools/wheel-of-names:1.0.0
 
 - `image.repository`, `image.tag` — образ в Harbor (по умолчанию тег = `appVersion` из `Chart.yaml`);
 - `imagePullSecrets` — если проект в Harbor приватный;
-- `ingress.className`, `ingress.hosts`, `ingress.tls`, `ingress.annotations` (например, cert-manager);
+- `ingress.className`, `ingress.hosts`, `ingress.tls`, `ingress.annotations` (например, cert-manager) — или `httpRoute.*` для Gateway API (см. ниже);
+- `traefikMiddlewares` — свои Traefik Middleware;
 - при необходимости `replicaCount`, `resources`, `nodeSelector`, `tolerations`, `affinity`, `podDisruptionBudget`.
 
 Все параметры с комментариями — в `helm/wheel-of-names/values.yaml`. Namespace чарт не создаёт: в Application для этого стоит `CreateNamespace=true`.
+
+### Ingress или Gateway API (HTTPRoute)
+
+По умолчанию создаётся `Ingress`. Для Gateway API — `argocd/application-httproute.yaml` (использовать вместо `application.yaml`, имя Application то же):
+
+```yaml
+ingress:
+  enabled: false
+httpRoute:
+  enabled: true
+  parentRefs:
+    - name: traefik-gateway      # ваш Gateway
+      namespace: traefik
+      sectionName: websecure
+  hostnames: [wheel.example.local]
+  # matches: по умолчанию PathPrefix /
+  # filters: доп. фильтры правила (RequestHeaderModifier, ExtensionRef на существующий Middleware и т.п.)
+```
+
+### Traefik Middleware
+
+`traefikMiddlewares` — список своих `Middleware` (`traefik.io/v1alpha1`), `spec` пишется как в документации Traefik:
+
+```yaml
+traefikMiddlewares:
+  - name: ip-allowlist
+    spec:
+      ipAllowList:
+        sourceRange: [10.0.0.0/8]
+```
+
+Чарт создаёт их в namespace приложения под именем `<release>-wheel-of-names-<name>` (при `releaseName: wheel-of-names` — `wheel-of-names-<name>`) и сам подключает:
+
+- к HTTPRoute — фильтром `ExtensionRef` (перед фильтрами из `httpRoute.filters`);
+- к Ingress — аннотацией `traefik.ingress.kubernetes.io/router.middlewares` (дописывается к уже заданной в `ingress.annotations`); отключается `traefikMiddlewaresAttachToIngress: false`.
+
+Нужны установленные CRD Traefik (и Gateway API — для HTTPRoute), а у Traefik включён провайдер `kubernetesGateway` / `kubernetesCRD`.
 
 ### Вариант 1: чарт из git (по умолчанию)
 
@@ -72,7 +110,7 @@ kubectl apply -n argocd -f argocd/application.yaml
 
 ```bash
 helm package helm/wheel-of-names
-helm push wheel-of-names-0.1.0.tgz oci://harbor.example.local/charts
+helm push wheel-of-names-0.2.0.tgz oci://harbor.example.local/charts
 ```
 
 В Application заменить `source` на:
@@ -81,7 +119,7 @@ helm push wheel-of-names-0.1.0.tgz oci://harbor.example.local/charts
   source:
     repoURL: harbor.example.local/charts   # без oci://; репозиторий в ArgoCD добавить с enableOCI: true
     chart: wheel-of-names
-    targetRevision: 0.1.0
+    targetRevision: 0.2.0
     helm:
       valuesObject: { ... }
 ```

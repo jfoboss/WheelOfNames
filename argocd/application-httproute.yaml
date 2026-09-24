@@ -1,0 +1,54 @@
+# Вариант ArgoCD Application: Gateway API (HTTPRoute) + Traefik вместо Ingress.
+# Использовать ВМЕСТО application.yaml, не вместе с ним (имя Application то же).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: wheel-of-names
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/jfoboss/WheelOfNames.git
+    targetRevision: main
+    path: helm/wheel-of-names
+    helm:
+      releaseName: wheel-of-names
+      valuesObject:
+        image:
+          repository: harbor.example.local/tools/wheel-of-names
+          tag: "1.0.0"
+        # imagePullSecrets:
+        #   - name: harbor-pull
+        ingress:
+          enabled: false
+        httpRoute:
+          enabled: true
+          parentRefs:
+            - name: traefik-gateway
+              namespace: traefik
+              sectionName: websecure
+          hostnames:
+            - wheel.example.local
+        # Свои Middleware: создаются в namespace приложения и подключаются к HTTPRoute
+        traefikMiddlewares:
+          - name: security-headers
+            spec:
+              headers:
+                stsSeconds: 31536000
+                stsIncludeSubdomains: true
+          # - name: ip-allowlist
+          #   spec:
+          #     ipAllowList:
+          #       sourceRange:
+          #         - 10.0.0.0/8
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: wheel-of-names
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

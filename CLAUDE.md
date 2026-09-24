@@ -5,8 +5,8 @@
 ## Структура
 - `app/` — вся статика: `index.html`, `app.js` (вся логика, IIFE, без сборки), `styles.css`, `sw.js`, `manifest.webmanifest`, `icons/`
 - `nginx/default.conf` + `nginx/headers.conf` — конфиг и заголовки безопасности
-- `helm/wheel-of-names/` — Helm-чарт: deployment, service, ingress, pdb (namespace не создаёт)
-- `argocd/application.yaml` — ArgoCD Application: чарт из git, значения под окружение в `valuesObject`
+- `helm/wheel-of-names/` — Helm-чарт: deployment, service, pdb, Ingress или HTTPRoute (Gateway API), Traefik Middleware из `traefikMiddlewares` (namespace не создаёт)
+- `argocd/application.yaml` (Ingress) и `argocd/application-httproute.yaml` (HTTPRoute + Traefik) — варианты ArgoCD Application: чарт из git, значения под окружение в `valuesObject`
 - `tools/gen_icons.py` — генерация иконок (Pillow)
 - `Dockerfile` — `nginx-unprivileged`, порт 8080, uid 101
 
@@ -29,10 +29,11 @@
   - офлайн-перезагрузка работает;
   - в 40 вращениях цвет сектора под указателем совпал с выпавшим именем.
 - `nginx -t` и отдача заголовков проверены.
-- Чарт: `helm lint --strict`, `helm template` и kubeconform (в т.ч. Application по схеме CRD ArgoCD) проходят.
+- Чарт: `helm lint --strict`, `helm template` и kubeconform (в т.ч. Application, HTTPRoute и Traefik Middleware по схемам CRD из datreeio/CRDs-catalog) проходят.
+- **Middleware из `traefikMiddlewares` подключаются автоматически**: к HTTPRoute через `ExtensionRef`, к Ingress через аннотацию `router.middlewares` (`<ns>-<name>@kubernetescrd`). При изменении шаблонов поднимать `version` в `Chart.yaml`.
 - **Не проверялись** `docker build` и реальный деплой в кластер: не было docker-демона и кластера.
 
 ## Что подставить под окружение
-- `argocd/application.yaml` → `repoURL` (зеркало, если ArgoCD не ходит на GitHub) и `valuesObject`: `image.repository`/`image.tag`, `imagePullSecrets`
-- там же `ingress`: хост, `className`, TLS. Сертификат должен быть от CA, которому доверяют рабочие станции, иначе PWA не установится.
+- `argocd/application*.yaml` → `repoURL` (зеркало, если ArgoCD не ходит на GitHub) и `valuesObject`: `image.repository`/`image.tag`, `imagePullSecrets`
+- там же `ingress` (хост, `className`, TLS) или `httpRoute` (`parentRefs` на ваш Gateway, `hostnames`). Сертификат должен быть от CA, которому доверяют рабочие станции, иначе PWA не установится.
 - `Dockerfile` → `BASE_IMAGE` через прокси-кэш Harbor

@@ -1,9 +1,15 @@
-{{- if .Values.ingress.enabled }}
 Колесо имён:
+{{- if .Values.ingress.enabled }}
 {{- range .Values.ingress.hosts }}
   https://{{ .host }}{{ (first .paths).path }}
 {{- end }}
-{{- else }}
-kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "wheel-of-names.fullname" . }} 8080:{{ .Values.service.port }}
-http://localhost:8080
+{{- end }}
+{{- if .Values.httpRoute.enabled }}
+{{- range .Values.httpRoute.hostnames }}
+  https://{{ . }}/
+{{- end }}
+{{- end }}
+{{- if not (or .Values.ingress.enabled .Values.httpRoute.enabled) }}
+  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "wheel-of-names.fullname" . }} 8080:{{ .Values.service.port }}
+  http://localhost:8080
 {{- end }}
