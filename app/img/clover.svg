@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Original drawing for this project: a lucky four-leaf clover. Fits a circle of r=240. -->
+  <rect width="512" height="512" fill="#FFF6D5"/>
+  <g stroke="#1F4D2B" stroke-width="10" stroke-linejoin="round" stroke-linecap="round">
+    <!-- stem -->
+    <path fill="none" stroke-width="16" d="M262 272 C 280 330, 300 370, 340 420"/>
+    <!-- four heart-shaped leaves around (256,240) -->
+    <g fill="#3FB35A">
+      <path d="M256 240 C 226 220, 176 214, 170 170 C 166 136, 204 118, 228 140 C 232 108, 276 104, 286 138 C 294 168, 272 206, 256 240 Z" transform="rotate(-45 256 240)"/>
+      <path d="M256 240 C 226 220, 176 214, 170 170 C 166 136, 204 118, 228 140 C 232 108, 276 104, 286 138 C 294 168, 272 206, 256 240 Z" transform="rotate(45 256 240)"/>
+      <path d="M256 240 C 226 220, 176 214, 170 170 C 166 136, 204 118, 228 140 C 232 108, 276 104, 286 138 C 294 168, 272 206, 256 240 Z" transform="rotate(135 256 240)"/>
+      <path d="M256 240 C 226 220, 176 214, 170 170 C 166 136, 204 118, 228 140 C 232 108, 276 104, 286 138 C 294 168, 272 206, 256 240 Z" transform="rotate(225 256 240)"/>
+    </g>
+    <!-- leaf veins -->
+    <path fill="none" stroke="#2A8A43" stroke-width="6" d="M256 240 L 196 180 M256 240 L 316 180 M256 240 L 316 300 M256 240 L 196 300"/>
+  </g>
+  <!-- sparkle -->
+  <g fill="#FFC21A" stroke="#1F4D2B" stroke-width="5" stroke-linejoin="round">
+    <path d="M400 110 l 10 24 l 24 10 l -24 10 l -10 24 l -10 -24 l -24 -10 l 24 -10 Z"/>
+    <path d="M110 360 l 7 16 l 16 7 l -16 7 l -7 16 l -7 -16 l -16 -7 l 16 -7 Z"/>
+  </g>
+</svg>

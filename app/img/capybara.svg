@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Original drawing for this project: a very calm capybara with an orange on its head. Fits a circle of r=240. -->
+  <rect width="512" height="512" fill="#BFE6F2"/>
+  <!-- water -->
+  <path fill="#7CC6E0" d="M16 330 C 90 314, 150 346, 256 330 C 360 314, 420 346, 496 330 L 496 380 C 470 460, 380 496, 256 496 C 132 496, 42 460, 16 380 Z"/>
+  <g stroke="#3A2616" stroke-width="10" stroke-linejoin="round" stroke-linecap="round">
+    <!-- ears -->
+    <path fill="#A0673A" d="M168 150 C 156 126, 176 108, 196 122 C 204 130, 200 146, 190 152 Z"/>
+    <path fill="#A0673A" d="M344 150 C 356 126, 336 108, 316 122 C 308 130, 312 146, 322 152 Z"/>
+    <!-- head: blocky capybara snout -->
+    <path fill="#B97A45" d="M170 150 C 200 128, 312 128, 342 150 C 368 170, 376 214, 376 256 C 376 312, 344 350, 256 350 C 168 350, 136 312, 136 256 C 136 214, 144 170, 170 150 Z"/>
+    <!-- snout -->
+    <path fill="#8E5A30" d="M184 262 C 184 236, 218 226, 256 226 C 294 226, 328 236, 328 262 C 328 300, 300 324, 256 324 C 212 324, 184 300, 184 262 Z"/>
+    <!-- nostrils and mouth -->
+    <path fill="none" stroke-width="8" d="M226 254 l 12 6 M286 254 l -12 6 M236 294 C 248 304, 264 304, 276 294"/>
+    <!-- sleepy content eyes -->
+    <path fill="none" stroke-width="9" d="M176 204 C 188 194, 204 194, 214 204 M298 204 C 308 194, 324 194, 336 204"/>
+    <!-- orange -->
+    <circle fill="#FF9F1C" cx="256" cy="112" r="40"/>
+    <path fill="#4CAF50" stroke-width="7" d="M256 72 C 262 56, 282 50, 294 58 C 284 72, 268 76, 256 72 Z"/>
+  </g>
+  <!-- ripples -->
+  <g fill="none" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round" stroke-opacity="0.8">
+    <path d="M100 370 c 20 -8 40 -8 60 0 M352 370 c 20 -8 40 -8 60 0 M220 400 c 24 -8 48 -8 72 0"/>
+  </g>
+</svg>

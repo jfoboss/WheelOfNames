@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Original drawing for this project: a happy donut. Fits a circle of r=240. -->
+  <rect width="512" height="512" fill="#CDEBFF"/>
+  <g stroke="#3B2314" stroke-width="10" stroke-linejoin="round" stroke-linecap="round">
+    <!-- dough -->
+    <path fill="#E9A866" fill-rule="evenodd" d="M256 96 C 358 96, 424 166, 424 262 C 424 352, 350 418, 256 418 C 162 418, 88 352, 88 262 C 88 166, 154 96, 256 96 Z M256 206 C 226 206, 206 228, 206 256 C 206 284, 226 304, 256 304 C 286 304, 306 284, 306 256 C 306 228, 286 206, 256 206 Z"/>
+    <!-- icing with drips -->
+    <path fill="#FF7FB6" fill-rule="evenodd" d="M256 110 C 350 110, 408 170, 408 250 C 408 280, 396 300, 384 312 C 376 320, 368 316, 366 306 C 362 290, 350 292, 346 306 C 340 332, 322 346, 300 350 C 288 352, 282 344, 284 332 C 286 318, 270 314, 262 326 C 246 348, 214 354, 190 344 C 176 338, 178 324, 170 318 C 160 312, 150 322, 142 314 C 118 292, 104 270, 104 246 C 104 170, 162 110, 256 110 Z M256 212 C 230 212, 212 232, 212 256 C 212 280, 230 298, 256 298 C 282 298, 300 280, 300 256 C 300 232, 282 212, 256 212 Z"/>
+  </g>
+  <!-- sprinkles -->
+  <g stroke-width="10" stroke-linecap="round">
+    <path stroke="#FFFFFF" d="M170 170 l 18 -10"/>
+    <path stroke="#FFE066" d="M240 150 l 20 4"/>
+    <path stroke="#7BD389" d="M320 160 l 16 12"/>
+    <path stroke="#6FB7FF" d="M364 226 l 4 20"/>
+    <path stroke="#FFFFFF" d="M140 240 l 2 20"/>
+    <path stroke="#FFE066" d="M330 290 l 18 -8"/>
+    <path stroke="#7BD389" d="M186 290 l -16 -10"/>
+    <path stroke="#6FB7FF" d="M206 186 l 14 -14"/>
+  </g>
+  <!-- face on the lower dough -->
+  <g stroke="#3B2314" stroke-linecap="round" fill="none">
+    <circle fill="#3B2314" stroke="none" cx="210" cy="372" r="9"/>
+    <circle fill="#3B2314" stroke="none" cx="302" cy="372" r="9"/>
+    <path stroke-width="8" d="M236 382 C 246 396, 266 396, 276 382"/>
+    <path stroke="#FF9AA2" stroke-width="10" d="M178 388 l 14 0 M320 388 l 14 0"/>
+  </g>
+</svg>

@@ -87,12 +87,10 @@
 
         <fieldset class="field group">
           <legend class="field-head">Картинка в центре</legend>
-          <div class="image-row">
-            <img id="imageThumb" class="image-thumb" alt="Текущая картинка в центре" hidden>
-            <div class="row">
-              <button id="imagePickBtn" class="btn" type="button">Выбрать картинку…</button>
-              <button id="imageRemoveBtn" class="btn" type="button" disabled>Убрать</button>
-            </div>
+          <div class="picks" id="imagePresets"></div>
+          <div class="row">
+            <button id="imagePickBtn" class="btn" type="button">Загрузить свою…</button>
+            <button id="imageRemoveBtn" class="btn" type="button" disabled>Удалить свою</button>
           </div>
           <input type="file" id="imageFile" accept="image/*" hidden>
           <label class="field">
@@ -100,7 +98,7 @@
             <input type="range" id="imageSize" min="20" max="50" step="1" value="34" disabled>
           </label>
           <label class="check"><input type="checkbox" id="imageRotate" disabled> Вращать вместе с колесом</label>
-          <p class="hint-small">Картинку можно просто перетащить на колесо. Она хранится только в этом браузере и в ссылку «Поделиться» не попадает.</p>
+          <p class="hint-small">Свою картинку можно просто перетащить на колесо. Она хранится только в этом браузере и в ссылку «Поделиться» не попадает (выбор из готовых — попадает).</p>
         </fieldset>
         <p class="note">Список и результаты хранятся только в этом браузере. Чтобы передать список коллегам, используйте «Поделиться списком».</p>
       </div>
