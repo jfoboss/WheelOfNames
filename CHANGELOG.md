@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.0](https://github.com/jfoboss/WheelOfNames/compare/v1.2.0...v1.3.0) (2026-09-28)
+
+
+### Features
+
+* show app version in the page footer ([e0258d5](https://github.com/jfoboss/WheelOfNames/commit/e0258d587982f07db9e8a490c711199450c5ee59))
+* номер версии внизу страницы; чистка дублей в CHANGELOG ([65ba4ef](https://github.com/jfoboss/WheelOfNames/commit/65ba4ef255b92d41427a18b5ed71f69f34e583e5))
+
 ## [1.2.0](https://github.com/jfoboss/WheelOfNames/compare/v1.1.0...v1.2.0) (2026-09-28)
 
 

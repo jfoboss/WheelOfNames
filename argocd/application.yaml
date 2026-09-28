@@ -13,7 +13,7 @@ spec:
   source:
     repoURL: https://github.com/jfoboss/WheelOfNames.git
     # Release tag; bumped by release-please on every release
-    targetRevision: v1.2.0 # x-release-please-version
+    targetRevision: v1.3.0 # x-release-please-version
     path: helm/wheel-of-names
     helm:
       releaseName: wheel-of-names
