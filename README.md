@@ -1,6 +1,32 @@
 # Колесо имён
 
+[![Release](https://img.shields.io/github/v/release/jfoboss/WheelOfNames?sort=semver)](https://github.com/jfoboss/WheelOfNames/releases/latest)
+[![Release date](https://img.shields.io/github/release-date/jfoboss/WheelOfNames)](https://github.com/jfoboss/WheelOfNames/releases/latest)
+[![CI](https://img.shields.io/github/actions/workflow/status/jfoboss/WheelOfNames/ci.yml?branch=main&label=CI)](https://github.com/jfoboss/WheelOfNames/actions/workflows/ci.yml)
+[![Release workflow](https://img.shields.io/github/actions/workflow/status/jfoboss/WheelOfNames/release.yml?branch=main&label=release)](https://github.com/jfoboss/WheelOfNames/actions/workflows/release.yml)
+[![Image](https://img.shields.io/github/v/release/jfoboss/WheelOfNames?sort=semver&label=image&logo=docker&logoColor=white)](https://github.com/jfoboss/WheelOfNames/pkgs/container/wheel-of-names)
+[![Helm chart](https://img.shields.io/github/v/release/jfoboss/WheelOfNames?sort=semver&label=helm%20chart&logo=helm&logoColor=white)](https://github.com/jfoboss/WheelOfNames/pkgs/container/charts%2Fwheel-of-names)
+[![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-fe5196?logo=conventionalcommits&logoColor=white)](https://www.conventionalcommits.org/ru/)
+[![License](https://img.shields.io/github/license/jfoboss/WheelOfNames)](LICENSE)
+
 Внутренний аналог wheelofnames.com: вписываете имена, крутите колесо, получаете случайного участника. Статическое PWA без бэкенда и внешних зависимостей — отдаётся nginx из контейнера, ставится на рабочий стол как приложение, работает офлайн.
+
+## Релизы и артефакты
+
+| | |
+|---|---|
+| Релизы и release notes | [GitHub Releases](https://github.com/jfoboss/WheelOfNames/releases) · [последний](https://github.com/jfoboss/WheelOfNames/releases/latest) · [CHANGELOG.md](CHANGELOG.md) |
+| Docker-образ | [`ghcr.io/jfoboss/wheel-of-names`](https://github.com/jfoboss/WheelOfNames/pkgs/container/wheel-of-names) — теги `X.Y.Z`, `X.Y`, `latest` |
+| Helm-чарт (OCI) | [`oci://ghcr.io/jfoboss/charts/wheel-of-names`](https://github.com/jfoboss/WheelOfNames/pkgs/container/charts%2Fwheel-of-names); `.tgz` также приложен к каждому релизу |
+| Сборки | [CI](https://github.com/jfoboss/WheelOfNames/actions/workflows/ci.yml) · [Release](https://github.com/jfoboss/WheelOfNames/actions/workflows/release.yml) |
+
+```bash
+docker pull ghcr.io/jfoboss/wheel-of-names:latest
+helm pull oci://ghcr.io/jfoboss/charts/wheel-of-names          # последняя версия
+helm show chart oci://ghcr.io/jfoboss/charts/wheel-of-names
+```
+
+Как выпускаются версии — в разделе [«Версионирование и релизы»](#версионирование-и-релизы).
 
 ## Что умеет
 
