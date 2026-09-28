@@ -9,8 +9,11 @@
 - `argocd/application.yaml` (Ingress) и `argocd/application-httproute.yaml` (HTTPRoute + Traefik) — варианты ArgoCD Application: чарт из git, значения под окружение в `valuesObject`
 - `tools/gen_icons.py` — генерация иконок (Pillow)
 - `Dockerfile` — `nginx-unprivileged`, порт 8080, uid 101
+- `.github/workflows/ci.yml` — проверки на PR: заголовок PR (Conventional Commits), синтаксис JS/Python, `ASSETS` в `sw.js`, helm lint + kubeconform, синхронность версий, `docker build` + smoke-тест с read-only rootfs
+- `.github/workflows/release.yml` — release-please + публикация образа и чарта в GHCR (опционально Harbor)
 
 ## Принятые решения (не ломать без причины)
+- **Версии ведёт release-please, руками не править.** Одна SemVer-версия на всё: тег `vX.Y.Z` = образ = `version`/`appVersion` в `Chart.yaml` = `version.txt` = `targetRevision` в `argocd/*.yaml`. Строки с версией помечены `x-release-please-version` (или блоком `x-release-please-start-version … end`); новые места с версией добавлять в `extra-files` в `release-please-config.json`. Коммиты и заголовки PR — Conventional Commits (`feat:`, `fix:`, `feat!:` …), от них зависит bump. Правило «поднимать `version` при изменении шаблонов» больше не действует — поднимает релиз.
 - **Язык: в коде — английский** (комментарии, сообщения ошибок `required`/`fail` в чарте, логи, `description` в Chart.yaml, NOTES). По-русски — только тексты интерфейса приложения и документация (README, CLAUDE.md).
 - **Никаких внешних зависимостей, CDN, шрифтов и сборщиков.** Приложение должно работать в закрытом контуре и офлайн.
 - **CSP `'self'` без inline.** Никаких `<script>` и `style="…"` в HTML. Стили из JS задавать только через CSSOM (`el.style.setProperty`).
@@ -31,10 +34,11 @@
   - в 40 вращениях цвет сектора под указателем совпал с выпавшим именем.
 - `nginx -t` и отдача заголовков проверены.
 - Чарт: `helm lint --strict`, `helm template` и kubeconform (в т.ч. Application, HTTPRoute и Traefik Middleware по схемам CRD из datreeio/CRDs-catalog) проходят.
-- **Middleware из `traefikMiddlewares` подключаются автоматически**: к HTTPRoute через `ExtensionRef`, к Ingress через аннотацию `router.middlewares` (`<ns>-<name>@kubernetescrd`). При изменении шаблонов поднимать `version` в `Chart.yaml`.
-- **Не проверялись** `docker build` и реальный деплой в кластер: не было docker-демона и кластера.
+- **Middleware из `traefikMiddlewares` подключаются автоматически**: к HTTPRoute через `ExtensionRef`, к Ingress через аннотацию `router.middlewares` (`<ns>-<name>@kubernetescrd`).
+- `docker build` и smoke-тест образа (read-only rootfs, uid 101, `nginx -t`, CSP, версия в `sw.js`) проверены локально и гоняются в CI. `dockerd` в облачной среде можно поднять вручную (`dockerd &`).
+- **Не проверялись** реальный деплой в кластер и прогон release-please/публикации (только actionlint).
 
 ## Что подставить под окружение
-- `argocd/application*.yaml` → `repoURL` (зеркало, если ArgoCD не ходит на GitHub) и `valuesObject`: `image.repository`/`image.tag`, `imagePullSecrets`
+- `argocd/application*.yaml` → `repoURL` (зеркало, если ArgoCD не ходит на GitHub) и `valuesObject`: `image.repository` (по умолчанию GHCR; тег = `appVersion`), `imagePullSecrets`
 - там же `ingress` (хост, `className`, TLS) или `httpRoute` (`parentRefs` на ваш Gateway, `hostnames`). Сертификат должен быть от CA, которому доверяют рабочие станции, иначе PWA не установится.
 - `Dockerfile` → `BASE_IMAGE` через прокси-кэш Harbor

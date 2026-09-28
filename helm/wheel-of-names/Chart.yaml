@@ -2,7 +2,8 @@ apiVersion: v2
 name: wheel-of-names
 description: Wheel of Names - static PWA served by nginx-unprivileged
 type: application
-# Chart version: bump on any change to templates/values
-version: 0.2.0
+# Chart version and appVersion are bumped by release-please (see release-please-config.json).
+# Chart and image share one version: vX.Y.Z tag => image X.Y.Z => chart X.Y.Z.
+version: 0.2.0 # x-release-please-version
 # Default image tag (when image.tag is not set)
-appVersion: "1.0.0"
+appVersion: "0.2.0" # x-release-please-version

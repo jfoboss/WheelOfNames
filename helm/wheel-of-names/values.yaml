@@ -1,7 +1,7 @@
 replicaCount: 2
 
 image:
-  repository: harbor.example.local/tools/wheel-of-names
+  repository: ghcr.io/jfoboss/wheel-of-names
   # Defaults to appVersion from Chart.yaml
   tag: ""
   pullPolicy: IfNotPresent
