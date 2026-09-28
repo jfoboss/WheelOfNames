@@ -4,6 +4,6 @@ description: Wheel of Names - static PWA served by nginx-unprivileged
 type: application
 # Chart version and appVersion are bumped by release-please (see release-please-config.json).
 # Chart and image share one version: vX.Y.Z tag => image X.Y.Z => chart X.Y.Z.
-version: 1.1.0 # x-release-please-version
+version: 1.2.0 # x-release-please-version
 # Default image tag (when image.tag is not set)
-appVersion: "1.1.0" # x-release-please-version
+appVersion: "1.2.0" # x-release-please-version
