@@ -347,15 +347,40 @@ body:not(.is-spinning) .wheel-wrap:hover canvas { filter: brightness(1.05) satur
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
 }
 
-.image-row { display: flex; align-items: center; gap: 12px; }
-.image-thumb {
-  width: 56px;
-  height: 56px;
-  flex: none;
-  border: 1px solid var(--line);
-  border-radius: 50%;
-  object-fit: cover;
+.picks {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  gap: 8px;
 }
+.pick {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 4px 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-s);
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+}
+.pick:hover { background: var(--hover); }
+.pick input { position: absolute; opacity: 0; pointer-events: none; }
+.pick:has(input:checked) { border-color: var(--focus); box-shadow: inset 0 0 0 1px var(--focus); }
+.pick:has(input:focus-visible) { outline: 2px solid var(--focus); outline-offset: 2px; }
+.pick-thumb {
+  display: block;
+  width: 44px;
+  height: 44px;
+  border: 1px dashed var(--line);
+  border-radius: 50%;
+  background: var(--surface);
+  overflow: hidden;
+}
+.pick-thumb:has(img) { border-style: solid; }
+.pick-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .hint-small { margin: 0; color: var(--muted); font-size: 13px; }
 .field input[type="range"]:disabled, .check:has(input:disabled) { opacity: 0.5; }
 

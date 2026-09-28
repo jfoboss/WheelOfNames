@@ -9,6 +9,19 @@
   // with the fill); stroke: sector separators; rim: outer ring; pointer/hub/hubInk: CSS overrides;
   // shade: glossy radial overlay; labelPrefix: prepended to every label; image: default center
   // image (the user's own image takes precedence).
+  // Built-in center images (original drawings shipped with the app, precached by sw.js)
+  const PRESETS = [
+    { id: 'anon', name: 'Аноним', src: 'img/anon.svg' },
+    { id: 'cat', name: 'Котик', src: 'img/cat.svg' },
+    { id: 'capybara', name: 'Капибара', src: 'img/capybara.svg' },
+    { id: 'donut', name: 'Пончик', src: 'img/donut.svg' },
+    { id: 'dice', name: 'Кубики', src: 'img/dice.svg' },
+    { id: 'crystal', name: 'Шар судьбы', src: 'img/crystal.svg' },
+    { id: 'clover', name: 'Клевер', src: 'img/clover.svg' },
+  ];
+  // settings.centerImage: 'auto' (theme image, if any) | 'none' | 'custom' (user upload) | preset id
+  const CENTER_CHOICES = ['auto', 'none', 'custom', ...PRESETS.map((x) => x.id)];
+
   const THEMES = [
     { id: 'classic', name: 'Классика', colors: ['#2F5DE0', '#FFC21A', '#E4572E', '#16A08F', '#7B4FD8', '#F08A24'] },
     { id: 'bright', name: 'Яркая', colors: ['#3369E8', '#D50F25', '#EEB211', '#009925'], shade: true, pointer: '#D50F25' },
@@ -61,7 +74,7 @@
     shareBtn: $('shareBtn'),
     fullscreenBtn: $('fullscreenBtn'),
     themes: $('themes'),
-    imageThumb: $('imageThumb'),
+    imagePresets: $('imagePresets'),
     imagePickBtn: $('imagePickBtn'),
     imageRemoveBtn: $('imageRemoveBtn'),
     imageFile: $('imageFile'),
@@ -83,9 +96,9 @@
   let pendingWinner = null;
   let theme = THEMES[0];
   let customImage = null; // { img, src } uploaded by the user
-  let themeImage = null; // { img, src } default image of the current theme
-  const themeImages = new Map(); // src -> Promise<HTMLImageElement>
-  const currentImage = () => customImage || themeImage;
+  let bundledImage = null; // { img, src } theme or preset image for the current choice
+  const bundledImages = new Map(); // src -> Promise<HTMLImageElement>
+  const currentImage = () => (state.settings.centerImage === 'custom' ? customImage : bundledImage);
   let hubBitmap = null; // center image pre-rendered as a circle at the current size
 
   function loadState() {
@@ -624,7 +637,10 @@
   }
 
   async function shareList() {
-    const code = toBase64Url(JSON.stringify({ t: state.title, e: entries, th: state.settings.theme }));
+    const payload = { t: state.title, e: entries, th: state.settings.theme };
+    // the uploaded image is not shared (too big for a link); bundled choices are
+    if (state.settings.centerImage !== 'custom') payload.ci = state.settings.centerImage;
+    const code = toBase64Url(JSON.stringify(payload));
     // the list goes into the fragment (#), so it is never sent to the server
     const url = `${location.origin}${location.pathname}#list=${code}`;
     try {
@@ -645,6 +661,7 @@
       state.text = list.join('\n');
       if (typeof data.t === 'string' && data.t.trim()) state.title = data.t.slice(0, 60);
       if (THEMES.some((t) => t.id === data.th)) state.settings.theme = data.th;
+      if (data.ci !== 'custom' && CENTER_CHOICES.includes(data.ci)) state.settings.centerImage = data.ci;
       toast(`Загружен список из ссылки: ${list.length}`);
     } catch {
       toast('Ссылка повреждена, открыт ваш прежний список');
@@ -672,24 +689,69 @@
     });
     const input = el.themes.querySelector(`input[value="${theme.id}"]`);
     if (input) input.checked = true;
-    loadThemeImage();
-    renderBitmap();
-    draw();
+    refreshCenterImage();
   }
 
-  function loadThemeImage() {
-    const src = theme.image;
-    themeImage = null;
+  // Source of the bundled image for the current choice (null for 'none' and 'custom')
+  function bundledSrc() {
+    const choice = state.settings.centerImage;
+    if (choice === 'none' || choice === 'custom') return null;
+    const preset = PRESETS.find((x) => x.id === choice);
+    return preset ? preset.src : theme.image || null;
+  }
+
+  function refreshCenterImage() {
+    const src = bundledSrc();
+    if (!bundledImage || bundledImage.src !== src) bundledImage = null;
     updateImageControls();
-    if (!src) return;
-    if (!themeImages.has(src)) themeImages.set(src, loadImage(src));
-    themeImages.get(src).then((img) => {
-      if (theme.image !== src) return; // theme changed while loading
-      themeImage = { img, src };
+    renderBitmap();
+    draw();
+    if (!src || bundledImage) return;
+    if (!bundledImages.has(src)) bundledImages.set(src, loadImage(src));
+    bundledImages.get(src).then((img) => {
+      if (bundledSrc() !== src) return; // the choice changed while loading
+      bundledImage = { img, src };
       updateImageControls();
       renderBitmap();
       draw();
-    }).catch(() => themeImages.delete(src));
+    }).catch(() => bundledImages.delete(src));
+  }
+
+  function setCenterChoice(choice) {
+    state.settings.centerImage = choice;
+    saveState();
+    refreshCenterImage();
+  }
+
+  function buildImagePicker() {
+    const options = [
+      { id: 'auto', name: 'Как в теме' },
+      { id: 'none', name: 'Нет' },
+      ...PRESETS,
+      { id: 'custom', name: 'Своя' },
+    ];
+    el.imagePresets.replaceChildren(...options.map((o) => {
+      const label = document.createElement('label');
+      label.className = 'pick';
+      label.dataset.choice = o.id;
+      const input = document.createElement('input');
+      input.type = 'radio';
+      input.name = 'centerImage';
+      input.value = o.id;
+      input.addEventListener('change', () => setCenterChoice(o.id));
+      const thumb = document.createElement('span');
+      thumb.className = 'pick-thumb';
+      if (o.src) {
+        const img = document.createElement('img');
+        img.src = o.src;
+        img.alt = '';
+        thumb.append(img);
+      }
+      const name = document.createElement('span');
+      name.textContent = o.name;
+      label.append(input, thumb, name);
+      return label;
+    }));
   }
 
   function buildThemePicker() {
@@ -761,6 +823,8 @@
       data = cv.toDataURL('image/webp', 0.9);
       if (!data.startsWith('data:image/webp')) data = cv.toDataURL('image/png');
       customImage = { img: await loadImage(data), src: data };
+      state.settings.centerImage = 'custom';
+      saveState();
     } catch {
       toast('Не удалось открыть картинку');
       return;
@@ -779,17 +843,20 @@
   function removeCenterImage() {
     customImage = null;
     try { localStorage.removeItem(IMAGE_KEY); } catch { /* ignore */ }
-    updateImageControls();
-    renderBitmap();
-    draw();
+    if (state.settings.centerImage === 'custom') setCenterChoice('auto');
+    else updateImageControls();
   }
 
   function updateImageControls() {
-    const image = currentImage();
-    const has = Boolean(image);
-    el.imageThumb.hidden = !has;
-    if (has) el.imageThumb.src = image.src; else el.imageThumb.removeAttribute('src');
-    // "Remove" drops only the user's own image; the theme image comes back after it
+    const has = Boolean(currentImage());
+    const choice = state.settings.centerImage;
+    const input = el.imagePresets.querySelector(`input[value="${choice}"]`);
+    if (input) input.checked = true;
+    // "Своя" tile exists only while there is an uploaded image; "Как в теме" previews the theme image
+    const customTile = el.imagePresets.querySelector('[data-choice="custom"]');
+    customTile.hidden = !customImage;
+    setTileImage(customTile, customImage && customImage.src);
+    setTileImage(el.imagePresets.querySelector('[data-choice="auto"]'), theme.image);
     el.imageRemoveBtn.disabled = !customImage;
     el.imageSize.disabled = !has;
     el.imageRotate.disabled = !has;
@@ -797,22 +864,40 @@
     el.wrap.style.setProperty('--hub-size', `${state.settings.imageSize * 100}%`);
   }
 
-  async function restoreCenterImage() {
-    let data = null;
-    try { data = localStorage.getItem(IMAGE_KEY); } catch { /* ignore */ }
-    if (!data) return;
+  function setTileImage(tile, src) {
+    const thumb = tile.querySelector('.pick-thumb');
+    let img = thumb.querySelector('img');
+    if (!src) {
+      if (img) img.remove();
+      return;
+    }
+    if (!img) {
+      img = document.createElement('img');
+      img.alt = '';
+      thumb.append(img);
+    }
+    if (img.getAttribute('src') !== src) img.src = src;
+  }
+
+  async function restoreCenterImage(data) {
     try {
       customImage = { img: await loadImage(data), src: data };
-      updateImageControls();
-      renderBitmap();
-      draw();
-    } catch { /* keep the theme image */ }
+    } catch {
+      if (state.settings.centerImage === 'custom') state.settings.centerImage = 'auto';
+    }
+    refreshCenterImage();
   }
 
   function setupAppearance() {
     const size = Number(state.settings.imageSize);
     state.settings.imageSize = Number.isFinite(size) ? Math.min(0.5, Math.max(0.2, size)) : DEFAULT_SETTINGS.imageSize;
+    let stored = null;
+    try { stored = localStorage.getItem(IMAGE_KEY); } catch { /* ignore */ }
+    // Before 1.2 an uploaded image was always shown: keep it for existing users
+    if (!CENTER_CHOICES.includes(state.settings.centerImage)) state.settings.centerImage = stored ? 'custom' : 'auto';
+    if (state.settings.centerImage === 'custom' && !stored) state.settings.centerImage = 'auto';
     buildThemePicker();
+    buildImagePicker();
     el.imageSize.value = String(Math.round(state.settings.imageSize * 100));
     el.imageSizeOut.textContent = `${el.imageSize.value}%`;
     el.imageRotate.checked = state.settings.imageRotate;
@@ -855,7 +940,7 @@
     });
 
     applyTheme();
-    restoreCenterImage();
+    if (stored) restoreCenterImage(stored);
   }
 
   // ---------- tabs ----------

@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Original drawing for this project: a pair of dice (fits the "random pick" idea). Fits a circle of r=240. -->
+  <rect width="512" height="512" fill="#C9F2D6"/>
+  <g stroke="#1E2A3A" stroke-width="10" stroke-linejoin="round">
+    <!-- back die, tilted -->
+    <g transform="rotate(-18 330 220)">
+      <rect x="250" y="130" width="170" height="170" rx="30" fill="#FFFFFF"/>
+      <g fill="#E4572E" stroke="none">
+        <circle cx="295" cy="175" r="15"/><circle cx="375" cy="175" r="15"/>
+        <circle cx="295" cy="255" r="15"/><circle cx="375" cy="255" r="15"/>
+      </g>
+    </g>
+    <!-- front die -->
+    <g transform="rotate(12 200 310)">
+      <rect x="100" y="210" width="200" height="200" rx="34" fill="#FFFFFF"/>
+      <g fill="#1E2A3A" stroke="none">
+        <circle cx="150" cy="260" r="17"/><circle cx="250" cy="260" r="17"/>
+        <circle cx="200" cy="310" r="17"/>
+        <circle cx="150" cy="360" r="17"/><circle cx="250" cy="360" r="17"/>
+      </g>
+    </g>
+  </g>
+  <!-- motion sparks -->
+  <g fill="none" stroke="#1E2A3A" stroke-width="8" stroke-linecap="round">
+    <path d="M110 150 l -28 -20 M140 120 l -14 -30 M410 360 l 30 14 M388 392 l 18 26"/>
+  </g>
+</svg>

@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Original drawing for this project: a smug cat. Fits a circle of r=240. -->
+  <rect width="512" height="512" fill="#FFE3B8"/>
+  <g stroke="#2A1E17" stroke-width="10" stroke-linejoin="round" stroke-linecap="round">
+    <!-- ears -->
+    <path fill="#F29A4A" d="M130 210 L 150 86 L 236 150 Z"/>
+    <path fill="#F29A4A" d="M382 210 L 362 86 L 276 150 Z"/>
+    <path fill="#FFB7A8" stroke-width="6" d="M156 176 L 164 118 L 206 150 Z"/>
+    <path fill="#FFB7A8" stroke-width="6" d="M356 176 L 348 118 L 306 150 Z"/>
+    <!-- head -->
+    <path fill="#F29A4A" d="M256 138 C 360 138, 412 200, 412 280 C 412 364, 340 412, 256 412 C 172 412, 100 364, 100 280 C 100 200, 152 138, 256 138 Z"/>
+    <!-- stripes -->
+    <path fill="none" stroke-width="8" d="M226 150 l 8 34 M256 146 l 0 40 M286 150 l -8 34"/>
+    <path fill="none" stroke-width="8" d="M104 262 l 34 8 M106 296 l 32 0 M408 262 l -34 8 M406 296 l -32 0"/>
+    <!-- muzzle -->
+    <path fill="#FFF4E6" d="M256 286 C 300 286, 332 306, 332 338 C 332 372, 300 388, 256 388 C 212 388, 180 372, 180 338 C 180 306, 212 286, 256 286 Z"/>
+    <!-- smug half-closed eyes -->
+    <path fill="#FFFFFF" d="M160 252 C 176 232, 214 232, 226 252 C 214 266, 176 266, 160 252 Z"/>
+    <path fill="#FFFFFF" d="M286 252 C 298 232, 336 232, 352 252 C 336 266, 298 266, 286 252 Z"/>
+    <path fill="none" d="M156 248 C 176 240, 208 240, 230 246 M282 246 C 304 240, 336 240, 356 248"/>
+    <circle fill="#2A1E17" stroke="none" cx="206" cy="254" r="9"/>
+    <circle fill="#2A1E17" stroke="none" cx="332" cy="254" r="9"/>
+    <!-- nose and mouth -->
+    <path fill="#FF7A8A" stroke-width="7" d="M240 300 L 272 300 L 256 318 Z"/>
+    <path fill="none" stroke-width="7" d="M256 318 C 256 340, 232 348, 218 334 M256 318 C 256 340, 280 348, 294 334"/>
+    <!-- whiskers -->
+    <path fill="none" stroke-width="5" d="M178 328 L 110 316 M180 344 L 114 352 M334 328 L 402 316 M332 344 L 398 352"/>
+  </g>
+</svg>
