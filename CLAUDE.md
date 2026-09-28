@@ -3,7 +3,7 @@
 Внутренний аналог wheelofnames.com для компании. Статическое PWA без бэкенда, отдаётся nginx в k8s. Пользователи ставят его на рабочий стол как приложение.
 
 ## Структура
-- `app/` — вся статика: `index.html`, `app.js` (вся логика, IIFE, без сборки), `styles.css`, `sw.js`, `manifest.webmanifest`, `icons/`
+- `app/` — вся статика: `index.html`, `app.js` (вся логика, IIFE, без сборки), `styles.css`, `sw.js`, `manifest.webmanifest`, `icons/`, `img/` (картинки тем)
 - `nginx/default.conf` + `nginx/headers.conf` — конфиг и заголовки безопасности
 - `helm/wheel-of-names/` — Helm-чарт: deployment, service, pdb, Ingress или HTTPRoute (Gateway API), Traefik Middleware из `traefikMiddlewares` (namespace не создаёт)
 - `argocd/application.yaml` (Ingress) и `argocd/application-httproute.yaml` (HTTPRoute + Traefik) — варианты ArgoCD Application: чарт из git, значения под окружение в `valuesObject`
@@ -24,7 +24,8 @@
 - **nginx: `add_header` внутри `location` отменяет заголовки уровня `server`.** Поэтому `headers.conf` подключается в каждый `location`.
 - **Под `readOnlyRootFilesystem` nginx пишет только в `/tmp`** (`emptyDir` в deployment).
 - **Состояние хранится в `localStorage`** под ключом `wheel-of-names:v1`; картинка в центре — отдельно под `wheel-of-names:v1:image` (data: URL, квадрат 512 px, webp/png). «Поделиться» кладёт список во фрагмент URL `#list=<base64url JSON {t, e, th}>` (`th` — id темы; картинка в ссылку не идёт).
-- **Темы колеса — массив `THEMES` в `app.js`** (`colors`, опционально `textColors`/`text`, `stroke`, `rim`, `pointer`/`hub`/`hubInk` → CSS-переменные на `.wheel-wrap`, `shade`). Новая тема = новый элемент массива, плитка в настройках строится сама.
+- **Темы колеса — массив `THEMES` в `app.js`** (`colors`, опционально `textColors`/`text`, `stroke`, `rim`, `pointer`/`hub`/`hubInk` → CSS-переменные на `.wheel-wrap`, `shade`, `labelPrefix`, `image` — картинка темы по умолчанию из `app/img/`, не забыть `ASSETS` в `sw.js`). Новая тема = новый элемент массива, плитка в настройках строится сама. Своя картинка пользователя важнее картинки темы; «Убрать» удаляет только свою.
+- **Картинки тем — только свои рисунки** (как `app/img/anon.svg`: SVG, всё в круге r=240, т.к. центр обрезается кругом). Не копировать защищённых персонажей: Trollface (копирайт Whynne) и Pepe (Matt Furie) — нельзя, репозиторий и образ публичные.
 - **Картинку в центре грузить только через FileReader → data: URL** (`blob:` запрещён CSP `img-src`). Рисуется на canvas: при вращении — в `bitmap`, неподвижная — поверх в `draw()`. Кнопка `.hub` при этом прозрачная, остаётся зоной клика.
 - **Клик по всей `.wheel-wrap` запускает вращение** (canvas, указатель, центр).
 

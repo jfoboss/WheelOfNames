@@ -7,7 +7,8 @@
   const IMAGE_PX = 512; // stored center image is a square of this size
   // Wheel themes. colors: sector fills; textColors: per-sector label colors (default: contrast
   // with the fill); stroke: sector separators; rim: outer ring; pointer/hub/hubInk: CSS overrides;
-  // shade: glossy radial overlay.
+  // shade: glossy radial overlay; labelPrefix: prepended to every label; image: default center
+  // image (the user's own image takes precedence).
   const THEMES = [
     { id: 'classic', name: 'Классика', colors: ['#2F5DE0', '#FFC21A', '#E4572E', '#16A08F', '#7B4FD8', '#F08A24'] },
     { id: 'bright', name: 'Яркая', colors: ['#3369E8', '#D50F25', '#EEB211', '#009925'], shade: true, pointer: '#D50F25' },
@@ -16,6 +17,7 @@
     { id: 'ocean', name: 'Море', colors: ['#03256C', '#0077B6', '#00B4D8', '#90E0EF', '#2541B2'], rim: '#03256C', pointer: '#00B4D8', hub: '#90E0EF', hubInk: '#03256C', shade: true },
     { id: 'autumn', name: 'Осень', colors: ['#9C2C13', '#D9531E', '#F2A541', '#6B8E23', '#8B5A2B'], rim: '#5A2E14', pointer: '#5A2E14', hub: '#F2A541', hubInk: '#3B1D0C' },
     { id: 'mono', name: 'Монохром', colors: ['#1F2430', '#3B4252', '#5E6779', '#8A93A6', '#C9CED8'], stroke: 'rgba(255,255,255,0.6)', hub: '#1F2430', hubInk: '#FFFFFF' },
+    { id: 'imageboard', name: 'Имиджборд', colors: ['#F0E0D6', '#FFFFEE', '#D6DAF0', '#EEF2FF'], textColors: ['#789922'], labelPrefix: '>', stroke: '#D9BFB7', rim: '#800000', pointer: '#117743', hub: '#800000', hubInk: '#FFFFEE', image: 'img/anon.svg' },
     { id: 'neon', name: 'Неон', colors: ['#12132B', '#1D1F45'], textColors: ['#39FF14', '#FF2E97', '#00E5FF', '#FFE600'], stroke: '#FF2E97', rim: '#FF2E97', pointer: '#00E5FF', hub: '#FF2E97', hubInk: '#12132B' },
   ];
   const DEFAULT_TITLE = 'Колесо имён';
@@ -80,7 +82,10 @@
   let dpr = 1;
   let pendingWinner = null;
   let theme = THEMES[0];
-  let hubImage = null; // decoded center image, if any
+  let customImage = null; // { img, src } uploaded by the user
+  let themeImage = null; // { img, src } default image of the current theme
+  const themeImages = new Map(); // src -> Promise<HTMLImageElement>
+  const currentImage = () => customImage || themeImage;
   let hubBitmap = null; // center image pre-rendered as a circle at the current size
 
   function loadState() {
@@ -295,15 +300,17 @@
     ctx.textAlign = 'right';
     ctx.textBaseline = 'middle';
     for (let i = 0; i < n; i++) {
-      // long names first shrink (down to 60%), only then get an ellipsis
+      // long names first shrink (down to 50%), only then get an ellipsis
+      const label = (theme.labelPrefix || '') + entries[i];
       ctx.font = font(fontPx);
-      const width = ctx.measureText(entries[i]).width;
-      if (width > maxWidth) ctx.font = font(Math.max(fontPx * 0.6, (fontPx * maxWidth) / width));
+      const width = ctx.measureText(label).width;
+      // 3% slack: glyph hinting makes the rescaled text a hair wider than the linear estimate
+      if (width > maxWidth) ctx.font = font(Math.max(fontPx * 0.5, (fontPx * maxWidth * 0.97) / width));
       ctx.save();
       ctx.translate(c, c);
       ctx.rotate((i + 0.5) * seg);
       ctx.fillStyle = labelColor(i, n);
-      ctx.fillText(fitText(ctx, entries[i], maxWidth), R - outerPad, 0);
+      ctx.fillText(fitText(ctx, label, maxWidth), R - outerPad, 0);
       ctx.restore();
     }
   }
@@ -311,7 +318,8 @@
   // Center image as a ready-to-blit circle with a ring
   function renderHub() {
     const S = el.wheel.width;
-    if (!hubImage || !S) {
+    const image = currentImage();
+    if (!image || !S) {
       hubBitmap = null;
       return;
     }
@@ -331,7 +339,7 @@
     ctx.clip();
     ctx.fillStyle = '#FFFFFF';
     ctx.fillRect(0, 0, d, d);
-    ctx.drawImage(hubImage, 0, 0, d, d);
+    ctx.drawImage(image.img, 0, 0, d, d);
     ctx.restore();
     ctx.beginPath();
     ctx.arc(r, r, r - ring / 2, 0, TAU);
@@ -664,8 +672,24 @@
     });
     const input = el.themes.querySelector(`input[value="${theme.id}"]`);
     if (input) input.checked = true;
+    loadThemeImage();
     renderBitmap();
     draw();
+  }
+
+  function loadThemeImage() {
+    const src = theme.image;
+    themeImage = null;
+    updateImageControls();
+    if (!src) return;
+    if (!themeImages.has(src)) themeImages.set(src, loadImage(src));
+    themeImages.get(src).then((img) => {
+      if (theme.image !== src) return; // theme changed while loading
+      themeImage = { img, src };
+      updateImageControls();
+      renderBitmap();
+      draw();
+    }).catch(() => themeImages.delete(src));
   }
 
   function buildThemePicker() {
@@ -736,7 +760,7 @@
       ctx.drawImage(src, (w - side) / 2, (h - side) / 2, side, side, 0, 0, IMAGE_PX, IMAGE_PX);
       data = cv.toDataURL('image/webp', 0.9);
       if (!data.startsWith('data:image/webp')) data = cv.toDataURL('image/png');
-      hubImage = await loadImage(data);
+      customImage = { img: await loadImage(data), src: data };
     } catch {
       toast('Не удалось открыть картинку');
       return;
@@ -747,24 +771,26 @@
     } catch {
       toast('Картинка установлена, но не сохранится после перезагрузки: не хватает места в браузере');
     }
-    updateImageControls(data);
+    updateImageControls();
     renderBitmap();
     draw();
   }
 
   function removeCenterImage() {
-    hubImage = null;
+    customImage = null;
     try { localStorage.removeItem(IMAGE_KEY); } catch { /* ignore */ }
-    updateImageControls(null);
+    updateImageControls();
     renderBitmap();
     draw();
   }
 
-  function updateImageControls(src) {
-    const has = Boolean(src);
+  function updateImageControls() {
+    const image = currentImage();
+    const has = Boolean(image);
     el.imageThumb.hidden = !has;
-    if (has) el.imageThumb.src = src; else el.imageThumb.removeAttribute('src');
-    el.imageRemoveBtn.disabled = !has;
+    if (has) el.imageThumb.src = image.src; else el.imageThumb.removeAttribute('src');
+    // "Remove" drops only the user's own image; the theme image comes back after it
+    el.imageRemoveBtn.disabled = !customImage;
     el.imageSize.disabled = !has;
     el.imageRotate.disabled = !has;
     el.wrap.classList.toggle('has-image', has);
@@ -774,18 +800,13 @@
   async function restoreCenterImage() {
     let data = null;
     try { data = localStorage.getItem(IMAGE_KEY); } catch { /* ignore */ }
-    if (!data) {
-      updateImageControls(null);
-      return;
-    }
+    if (!data) return;
     try {
-      hubImage = await loadImage(data);
-      updateImageControls(data);
+      customImage = { img: await loadImage(data), src: data };
+      updateImageControls();
       renderBitmap();
       draw();
-    } catch {
-      updateImageControls(null);
-    }
+    } catch { /* keep the theme image */ }
   }
 
   function setupAppearance() {
