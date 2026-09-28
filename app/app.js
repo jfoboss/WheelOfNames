@@ -2,6 +2,8 @@
 
 (() => {
   const TAU = Math.PI * 2;
+  // Substituted with the release version when the image is built (see Dockerfile)
+  const APP_VERSION = '__APP_VERSION__';
   const STORAGE_KEY = 'wheel-of-names:v1';
   const IMAGE_KEY = `${STORAGE_KEY}:image`;
   const IMAGE_PX = 512; // stored center image is a square of this size
@@ -73,6 +75,7 @@
     installBtn: $('installBtn'),
     shareBtn: $('shareBtn'),
     fullscreenBtn: $('fullscreenBtn'),
+    appVersion: $('appVersion'),
     themes: $('themes'),
     imagePresets: $('imagePresets'),
     imagePickBtn: $('imagePickBtn'),
@@ -1016,6 +1019,9 @@
     el.sound.checked = state.settings.sound;
     el.autoRemove.checked = state.settings.autoRemove;
     el.confettiOn.checked = state.settings.confetti;
+
+    const built = !APP_VERSION.startsWith('__');
+    el.appVersion.textContent = !built ? 'dev' : /^\d+\.\d+\.\d+/.test(APP_VERSION) ? `v${APP_VERSION}` : APP_VERSION;
 
     const isMac = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
     const coarse = window.matchMedia('(pointer: coarse)').matches;

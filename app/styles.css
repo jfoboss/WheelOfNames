@@ -111,7 +111,7 @@ button, input, textarea { font: inherit; color: inherit; }
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(320px, 400px);
   gap: 24px;
-  padding: 0 24px 24px;
+  padding: 0 24px 12px;
 }
 
 .stage {
@@ -461,7 +461,17 @@ body:not(.is-spinning) .wheel-wrap:hover canvas { filter: brightness(1.05) satur
   cursor: pointer;
 }
 
+/* ---------- footer ---------- */
+.app-footer {
+  padding: 0 24px 10px;
+  color: var(--muted);
+  font-size: 12px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
 /* ---------- fullscreen mode: wheel only ---------- */
+.focus .app-footer,
 .focus .panel,
 .focus #shareBtn,
 .focus #installBtn { display: none; }

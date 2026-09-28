@@ -104,6 +104,7 @@ jobs:
           curl -sfI localhost:8080/ | tee /tmp/headers
           grep -qi '^content-security-policy:' /tmp/headers
           curl -sf localhost:8080/sw.js | grep -q "'ci-${{ github.sha }}'"
+          curl -sf localhost:8080/app.js | grep -q "APP_VERSION = 'ci-${{ github.sha }}'"
           curl -sf localhost:8080/manifest.webmanifest > /dev/null
       - name: Logs
         if: always()

@@ -20,7 +20,7 @@
 - **Только относительные пути**, чтобы приложение работало и в подпути за ingress.
 - **Честный выбор.** Победитель определяется через `crypto.getRandomValues` с rejection sampling (`randomInt`) ДО анимации. Угол остановки считается внутри сектора победителя. Указатель стоит справа (угол 0), индекс под ним вычисляет `indexAt()`. Анимация на результат не влияет.
 - **Колесо рисуется один раз в offscreen-canvas** (`renderBitmap`); кадр анимации только поворачивает картинку (`draw`).
-- **Service worker работает cache-first.** Имя кэша содержит `__APP_VERSION__`, его подставляет `sed` в Dockerfile (`ARG APP_VERSION`, по умолчанию время сборки). При добавлении новых файлов в `app/` нужно дописать их в `ASSETS` в `sw.js`.
+- **Service worker работает cache-first.** Имя кэша содержит `__APP_VERSION__`, его подставляет `sed` в Dockerfile (`ARG APP_VERSION`, по умолчанию время сборки) — в `sw.js` и в `app.js` (номер версии в подвале страницы: `vX.Y.Z` у релиза, `dev` без сборки). При добавлении новых файлов в `app/` нужно дописать их в `ASSETS` в `sw.js`.
 - **nginx: `add_header` внутри `location` отменяет заголовки уровня `server`.** Поэтому `headers.conf` подключается в каждый `location`.
 - **Под `readOnlyRootFilesystem` nginx пишет только в `/tmp`** (`emptyDir` в deployment).
 - **Состояние хранится в `localStorage`** под ключом `wheel-of-names:v1`; картинка в центре — отдельно под `wheel-of-names:v1:image` (data: URL, квадрат 512 px, webp/png). «Поделиться» кладёт список во фрагмент URL `#list=<base64url JSON {t, e, th, ci}>` (`th` — id темы, `ci` — выбор картинки; загруженная картинка в ссылку не идёт).
