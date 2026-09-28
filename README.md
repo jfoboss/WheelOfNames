@@ -140,7 +140,7 @@ kubectl apply -n argocd -f argocd/application.yaml
   source:
     repoURL: ghcr.io/jfoboss/charts   # без oci://; или harbor.example.local/tools/charts; в ArgoCD репозиторий с enableOCI: true
     chart: wheel-of-names
-    targetRevision: 0.2.0
+    targetRevision: 1.0.0
     helm:
       valuesObject: { ... }
 ```
@@ -150,7 +150,7 @@ kubectl apply -n argocd -f argocd/application.yaml
 
 <!-- x-release-please-start-version -->
 ```bash
-helm upgrade --install wheel-of-names oci://ghcr.io/jfoboss/charts/wheel-of-names --version 0.2.0 \
+helm upgrade --install wheel-of-names oci://ghcr.io/jfoboss/charts/wheel-of-names --version 1.0.0 \
   -n wheel-of-names --create-namespace --set 'ingress.hosts[0].host=wheel.example.local' ...
 ```
 <!-- x-release-please-end -->
