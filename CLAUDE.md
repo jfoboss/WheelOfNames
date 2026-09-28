@@ -23,7 +23,10 @@
 - **Service worker работает cache-first.** Имя кэша содержит `__APP_VERSION__`, его подставляет `sed` в Dockerfile (`ARG APP_VERSION`, по умолчанию время сборки). При добавлении новых файлов в `app/` нужно дописать их в `ASSETS` в `sw.js`.
 - **nginx: `add_header` внутри `location` отменяет заголовки уровня `server`.** Поэтому `headers.conf` подключается в каждый `location`.
 - **Под `readOnlyRootFilesystem` nginx пишет только в `/tmp`** (`emptyDir` в deployment).
-- **Состояние хранится в `localStorage`** под ключом `wheel-of-names:v1`. «Поделиться» кладёт список во фрагмент URL `#list=<base64url JSON {t, e}>`.
+- **Состояние хранится в `localStorage`** под ключом `wheel-of-names:v1`; картинка в центре — отдельно под `wheel-of-names:v1:image` (data: URL, квадрат 512 px, webp/png). «Поделиться» кладёт список во фрагмент URL `#list=<base64url JSON {t, e, th}>` (`th` — id темы; картинка в ссылку не идёт).
+- **Темы колеса — массив `THEMES` в `app.js`** (`colors`, опционально `textColors`/`text`, `stroke`, `rim`, `pointer`/`hub`/`hubInk` → CSS-переменные на `.wheel-wrap`, `shade`). Новая тема = новый элемент массива, плитка в настройках строится сама.
+- **Картинку в центре грузить только через FileReader → data: URL** (`blob:` запрещён CSP `img-src`). Рисуется на canvas: при вращении — в `bitmap`, неподвижная — поверх в `draw()`. Кнопка `.hub` при этом прозрачная, остаётся зоной клика.
+- **Клик по всей `.wheel-wrap` запускает вращение** (canvas, указатель, центр).
 
 ## Проверка
 - Локально: `cd app && python3 -m http.server 8000`. `localhost` — безопасный контекст, SW и установка работают.
@@ -32,6 +35,7 @@
   - `Page.getInstallabilityErrors` пуст;
   - офлайн-перезагрузка работает;
   - в 40 вращениях цвет сектора под указателем совпал с выпавшим именем.
+- Темы и картинка проверены в Chromium против nginx с боевым CSP: нарушений CSP нет, картинка сохраняется после перезагрузки, тема приходит по ссылке, 30/30 вращений с картинкой — цвет под указателем = победитель, клик по краю колеса запускает вращение (десктоп/узкий экран/тач).
 - `nginx -t` и отдача заголовков проверены.
 - Чарт: `helm lint --strict`, `helm template` и kubeconform (в т.ч. Application, HTTPRoute и Traefik Middleware по схемам CRD из datreeio/CRDs-catalog) проходят.
 - **Middleware из `traefikMiddlewares` подключаются автоматически**: к HTTPRoute через `ExtensionRef`, к Ingress через аннотацию `router.middlewares` (`<ns>-<name>@kubernetescrd`).

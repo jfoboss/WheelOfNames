@@ -79,6 +79,29 @@
         <label class="check"><input type="checkbox" id="sound"> Звук</label>
         <label class="check"><input type="checkbox" id="autoRemove"> Сразу убирать выпавшего из списка</label>
         <label class="check"><input type="checkbox" id="confettiOn"> Конфетти</label>
+
+        <fieldset class="field group">
+          <legend class="field-head">Оформление колеса</legend>
+          <div class="themes" id="themes"></div>
+        </fieldset>
+
+        <fieldset class="field group">
+          <legend class="field-head">Картинка в центре</legend>
+          <div class="image-row">
+            <img id="imageThumb" class="image-thumb" alt="Текущая картинка в центре" hidden>
+            <div class="row">
+              <button id="imagePickBtn" class="btn" type="button">Выбрать картинку…</button>
+              <button id="imageRemoveBtn" class="btn" type="button" disabled>Убрать</button>
+            </div>
+          </div>
+          <input type="file" id="imageFile" accept="image/*" hidden>
+          <label class="field">
+            <span class="field-head">Размер <output id="imageSizeOut" for="imageSize">34%</output></span>
+            <input type="range" id="imageSize" min="20" max="50" step="1" value="34" disabled>
+          </label>
+          <label class="check"><input type="checkbox" id="imageRotate" disabled> Вращать вместе с колесом</label>
+          <p class="hint-small">Картинку можно просто перетащить на колесо. Она хранится только в этом браузере и в ссылку «Поделиться» не попадает.</p>
+        </fieldset>
         <p class="note">Список и результаты хранятся только в этом браузере. Чтобы передать список коллегам, используйте «Поделиться списком».</p>
       </div>
     </aside>
