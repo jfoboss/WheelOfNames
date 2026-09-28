@@ -1,0 +1,110 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  HELM_VERSION: v3.16.2
+  KUBECONFORM_VERSION: v0.6.7
+  CRD_SCHEMAS: https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json
+
+jobs:
+  pr-title:
+    name: PR title (Conventional Commits)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    steps:
+      - uses: amannn/action-semantic-pull-request@v6
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  static:
+    name: App sources
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: JS syntax
+        run: |
+          node --check app/app.js
+          node --check app/sw.js
+      - name: Manifest is valid JSON
+        run: python3 -c "import json; json.load(open('app/manifest.webmanifest'))"
+      - name: Python syntax
+        run: python3 -m py_compile tools/gen_icons.py
+      - name: Every file in app/ is precached by the service worker
+        run: |
+          missing=0
+          for f in $(cd app && find . -type f ! -name sw.js | sed 's#^\./##' | sort); do
+            grep -qF "'$f'" app/sw.js || { echo "::error file=app/sw.js::$f is missing from ASSETS"; missing=1; }
+          done
+          exit $missing
+
+  helm:
+    name: Helm chart
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: azure/setup-helm@v5
+        with:
+          version: ${{ env.HELM_VERSION }}
+      - name: Install kubeconform
+        run: |
+          curl -sSfL "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz" \
+            | tar xz -C /usr/local/bin kubeconform
+      - name: Lint
+        run: helm lint --strict helm/wheel-of-names
+      - name: Validate ArgoCD Applications
+        run: kubeconform -strict -summary -schema-location default -schema-location "$CRD_SCHEMAS" argocd/*.yaml
+      - name: Render and validate manifests
+        run: |
+          set -euo pipefail
+          kc() { kubeconform -strict -summary -schema-location default -schema-location "$CRD_SCHEMAS" -; }
+          echo "::group::defaults"
+          helm template wheel-of-names helm/wheel-of-names | kc
+          echo "::endgroup::"
+          for app in argocd/*.yaml; do
+            echo "::group::$app"
+            yq '.spec.source.helm.valuesObject' "$app" > /tmp/values.yaml
+            helm template wheel-of-names helm/wheel-of-names -n wheel-of-names -f /tmp/values.yaml | kc
+            echo "::endgroup::"
+          done
+      - name: Versions are in sync
+        run: |
+          v=$(cat version.txt)
+          m=$(jq -r '."."' .release-please-manifest.json)
+          cv=$(yq '.version' helm/wheel-of-names/Chart.yaml)
+          av=$(yq '.appVersion' helm/wheel-of-names/Chart.yaml)
+          echo "version.txt=$v manifest=$m chart=$cv appVersion=$av"
+          [ "$v" = "$m" ] && [ "$v" = "$cv" ] && [ "$v" = "$av" ]
+
+  image:
+    name: Docker image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build
+        run: docker build --build-arg APP_VERSION=ci-${{ github.sha }} -t wheel-of-names:ci .
+      - name: Smoke test (read-only rootfs, as in k8s)
+        run: |
+          set -euo pipefail
+          docker run -d --name app -p 8080:8080 --read-only --tmpfs /tmp --user 101:101 --cap-drop ALL wheel-of-names:ci
+          for i in $(seq 1 20); do curl -sf localhost:8080/healthz && break; sleep 1; done
+          docker exec app nginx -t
+          curl -sfI localhost:8080/ | tee /tmp/headers
+          grep -qi '^content-security-policy:' /tmp/headers
+          curl -sf localhost:8080/sw.js | grep -q "'ci-${{ github.sha }}'"
+          curl -sf localhost:8080/manifest.webmanifest > /dev/null
+      - name: Logs
+        if: always()
+        run: docker logs app || true
