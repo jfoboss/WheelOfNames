@@ -3,10 +3,27 @@
 (() => {
   const TAU = Math.PI * 2;
   const STORAGE_KEY = 'wheel-of-names:v1';
-  const PALETTE = ['#2F5DE0', '#FFC21A', '#E4572E', '#16A08F', '#7B4FD8', '#F08A24'];
+  const IMAGE_KEY = `${STORAGE_KEY}:image`;
+  const IMAGE_PX = 512; // stored center image is a square of this size
+  // Wheel themes. colors: sector fills; textColors: per-sector label colors (default: contrast
+  // with the fill); stroke: sector separators; rim: outer ring; pointer/hub/hubInk: CSS overrides;
+  // shade: glossy radial overlay.
+  const THEMES = [
+    { id: 'classic', name: 'Классика', colors: ['#2F5DE0', '#FFC21A', '#E4572E', '#16A08F', '#7B4FD8', '#F08A24'] },
+    { id: 'bright', name: 'Яркая', colors: ['#3369E8', '#D50F25', '#EEB211', '#009925'], shade: true, pointer: '#D50F25' },
+    { id: 'rainbow', name: 'Радуга', colors: ['#FF595E', '#FF924C', '#FFCA3A', '#8AC926', '#1982C4', '#6A4C93'], shade: true },
+    { id: 'pastel', name: 'Пастель', colors: ['#A7C7E7', '#F8C8DC', '#FDF6A3', '#B5EAD7', '#C7CEEA', '#FFDAC1'], text: '#2B2F3A', stroke: 'rgba(255,255,255,0.9)', hub: '#F8C8DC', hubInk: '#2B2F3A' },
+    { id: 'ocean', name: 'Море', colors: ['#03256C', '#0077B6', '#00B4D8', '#90E0EF', '#2541B2'], rim: '#03256C', pointer: '#00B4D8', hub: '#90E0EF', hubInk: '#03256C', shade: true },
+    { id: 'autumn', name: 'Осень', colors: ['#9C2C13', '#D9531E', '#F2A541', '#6B8E23', '#8B5A2B'], rim: '#5A2E14', pointer: '#5A2E14', hub: '#F2A541', hubInk: '#3B1D0C' },
+    { id: 'mono', name: 'Монохром', colors: ['#1F2430', '#3B4252', '#5E6779', '#8A93A6', '#C9CED8'], stroke: 'rgba(255,255,255,0.6)', hub: '#1F2430', hubInk: '#FFFFFF' },
+    { id: 'neon', name: 'Неон', colors: ['#12132B', '#1D1F45'], textColors: ['#39FF14', '#FF2E97', '#00E5FF', '#FFE600'], stroke: '#FF2E97', rim: '#FF2E97', pointer: '#00E5FF', hub: '#FF2E97', hubInk: '#12132B' },
+  ];
   const DEFAULT_TITLE = 'Колесо имён';
   const DEFAULT_TEXT = ['Аня', 'Борис', 'Вика', 'Гриша', 'Дина', 'Егор', 'Женя', 'Зоя'].join('\n');
-  const DEFAULT_SETTINGS = { duration: 6, sound: true, autoRemove: false, confetti: true };
+  const DEFAULT_SETTINGS = {
+    duration: 6, sound: true, autoRemove: false, confetti: true,
+    theme: 'classic', imageSize: 0.34, imageRotate: true,
+  };
 
   const $ = (id) => document.getElementById(id);
   const el = {
@@ -41,6 +58,14 @@
     installBtn: $('installBtn'),
     shareBtn: $('shareBtn'),
     fullscreenBtn: $('fullscreenBtn'),
+    themes: $('themes'),
+    imageThumb: $('imageThumb'),
+    imagePickBtn: $('imagePickBtn'),
+    imageRemoveBtn: $('imageRemoveBtn'),
+    imageFile: $('imageFile'),
+    imageSize: $('imageSize'),
+    imageSizeOut: $('imageSizeOut'),
+    imageRotate: $('imageRotate'),
   };
 
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -54,6 +79,9 @@
   let bitmap = null;
   let dpr = 1;
   let pendingWinner = null;
+  let theme = THEMES[0];
+  let hubImage = null; // decoded center image, if any
+  let hubBitmap = null; // center image pre-rendered as a circle at the current size
 
   function loadState() {
     const base = { title: DEFAULT_TITLE, text: DEFAULT_TEXT, results: [], removed: [], settings: { ...DEFAULT_SETTINGS } };
@@ -131,10 +159,18 @@
 
   // ---------- wheel rendering ----------
   function segmentColor(i, n) {
-    let c = i % PALETTE.length;
-    // the last sector must not share its color with the first one
-    if (n > 1 && i === n - 1 && c === 0) c = 2;
-    return PALETTE[c];
+    const colors = theme.colors;
+    let c = i % colors.length;
+    // the last sector must not share its color with the first one (nor with its other neighbour)
+    if (n > 1 && i === n - 1 && c === 0 && colors.length > 2) {
+      c = (n - 2) % colors.length === 1 ? 2 : 1;
+    }
+    return colors[c];
+  }
+
+  function labelColor(i, n) {
+    if (theme.textColors) return theme.textColors[i % theme.textColors.length];
+    return theme.text || textColorFor(segmentColor(i, n));
   }
 
   function textColorFor(hex) {
@@ -181,6 +217,7 @@
       bitmap.width = S;
       bitmap.height = S;
     }
+    renderHub();
     const ctx = bitmap.getContext('2d');
     ctx.clearRect(0, 0, S, S);
 
@@ -188,12 +225,11 @@
     const rim = Math.max(3, S * 0.008);
     const R = c - rim;
     const n = entries.length;
-    const surface = cssVar('--surface') || '#FFFFFF';
     const fontFamily = getComputedStyle(document.body).fontFamily;
 
     ctx.beginPath();
     ctx.arc(c, c, c, 0, TAU);
-    ctx.fillStyle = surface;
+    ctx.fillStyle = theme.rim || cssVar('--surface') || '#FFFFFF';
     ctx.fill();
 
     if (n === 0) {
@@ -206,9 +242,16 @@
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText('Добавьте участников', c, c + R * 0.42);
-      return;
+    } else {
+      drawSectors(ctx, c, R, n, fontFamily);
     }
 
+    if (hubBitmap && state.settings.imageRotate) {
+      ctx.drawImage(hubBitmap, c - hubBitmap.width / 2, c - hubBitmap.height / 2);
+    }
+  }
+
+  function drawSectors(ctx, c, R, n, fontFamily) {
     const seg = TAU / n;
     for (let i = 0; i < n; i++) {
       ctx.beginPath();
@@ -219,8 +262,19 @@
       ctx.fill();
     }
 
+    if (theme.shade) {
+      const g = ctx.createRadialGradient(c, c, R * 0.15, c, c, R);
+      g.addColorStop(0, 'rgba(255,255,255,0.16)');
+      g.addColorStop(0.7, 'rgba(255,255,255,0)');
+      g.addColorStop(1, 'rgba(0,0,0,0.16)');
+      ctx.beginPath();
+      ctx.arc(c, c, R, 0, TAU);
+      ctx.fillStyle = g;
+      ctx.fill();
+    }
+
     if (n > 1 && n <= 400) {
-      ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+      ctx.strokeStyle = theme.stroke || 'rgba(255,255,255,0.35)';
       ctx.lineWidth = Math.max(1, dpr);
       for (let i = 0; i < n; i++) {
         ctx.beginPath();
@@ -230,23 +284,60 @@
       }
     }
 
-    // Labels: radial, aligned to the outer edge
-    const inner = R * 0.26;
+    // Labels: radial, aligned to the outer edge, starting outside the center image
+    const hubR = hubBitmap ? hubBitmap.width / 2 : 0;
+    const inner = Math.max(R * 0.26, hubR + R * 0.05);
     const outerPad = R * 0.1; // room for the pointer
     const maxWidth = R - inner - outerPad;
     const fontPx = n === 1 ? R * 0.1 : Math.min(R * 0.085, seg * R * 0.6);
-    if (fontPx < 7 * dpr) return; // too many sectors, text would be unreadable
-    ctx.font = `600 ${fontPx}px ${fontFamily}`;
+    if (fontPx < 7 * dpr || maxWidth <= fontPx) return; // unreadable: too many sectors or too big an image
+    const font = (px) => `600 ${px}px ${fontFamily}`;
     ctx.textAlign = 'right';
     ctx.textBaseline = 'middle';
     for (let i = 0; i < n; i++) {
+      // long names first shrink (down to 60%), only then get an ellipsis
+      ctx.font = font(fontPx);
+      const width = ctx.measureText(entries[i]).width;
+      if (width > maxWidth) ctx.font = font(Math.max(fontPx * 0.6, (fontPx * maxWidth) / width));
       ctx.save();
       ctx.translate(c, c);
       ctx.rotate((i + 0.5) * seg);
-      ctx.fillStyle = textColorFor(segmentColor(i, n));
+      ctx.fillStyle = labelColor(i, n);
       ctx.fillText(fitText(ctx, entries[i], maxWidth), R - outerPad, 0);
       ctx.restore();
     }
+  }
+
+  // Center image as a ready-to-blit circle with a ring
+  function renderHub() {
+    const S = el.wheel.width;
+    if (!hubImage || !S) {
+      hubBitmap = null;
+      return;
+    }
+    const d = Math.round(S * state.settings.imageSize);
+    if (!hubBitmap || hubBitmap.width !== d) {
+      hubBitmap = document.createElement('canvas');
+      hubBitmap.width = d;
+      hubBitmap.height = d;
+    }
+    const ctx = hubBitmap.getContext('2d');
+    const r = d / 2;
+    const ring = Math.max(2, S * 0.008);
+    ctx.clearRect(0, 0, d, d);
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(r, r, r - ring / 2, 0, TAU);
+    ctx.clip();
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, d, d);
+    ctx.drawImage(hubImage, 0, 0, d, d);
+    ctx.restore();
+    ctx.beginPath();
+    ctx.arc(r, r, r - ring / 2, 0, TAU);
+    ctx.lineWidth = ring;
+    ctx.strokeStyle = theme.rim || cssVar('--surface') || '#FFFFFF';
+    ctx.stroke();
   }
 
   function draw() {
@@ -258,6 +349,10 @@
     ctx.translate(S / 2, S / 2);
     ctx.rotate(rotation);
     ctx.drawImage(bitmap, -S / 2, -S / 2);
+    if (hubBitmap && !state.settings.imageRotate) {
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.drawImage(hubBitmap, (S - hubBitmap.width) / 2, (S - hubBitmap.height) / 2);
+    }
   }
 
   // The pointer is on the right (angle 0). Which sector is under it at rotation rot:
@@ -441,7 +536,7 @@
       el.confetti.width = Math.round(w * d);
       el.confetti.height = Math.round(h * d);
       ctx.setTransform(d, 0, 0, d, 0, 0);
-      const colors = [color, ...PALETTE];
+      const colors = [color, ...theme.colors];
       for (let i = 0; i < 170; i++) {
         parts.push({
           x: w / 2 + (Math.random() - 0.5) * 80,
@@ -521,7 +616,7 @@
   }
 
   async function shareList() {
-    const code = toBase64Url(JSON.stringify({ t: state.title, e: entries }));
+    const code = toBase64Url(JSON.stringify({ t: state.title, e: entries, th: state.settings.theme }));
     // the list goes into the fragment (#), so it is never sent to the server
     const url = `${location.origin}${location.pathname}#list=${code}`;
     try {
@@ -541,6 +636,7 @@
       const list = data.e.filter((x) => typeof x === 'string').map((x) => x.trim()).filter(Boolean);
       state.text = list.join('\n');
       if (typeof data.t === 'string' && data.t.trim()) state.title = data.t.slice(0, 60);
+      if (THEMES.some((t) => t.id === data.th)) state.settings.theme = data.th;
       toast(`Загружен список из ссылки: ${list.length}`);
     } catch {
       toast('Ссылка повреждена, открыт ваш прежний список');
@@ -555,7 +651,190 @@
     el.title.value = state.title;
     document.title = state.title.trim() || DEFAULT_TITLE;
     el.entries.value = state.text;
+    applyTheme();
     onEntriesChanged();
+  }
+
+  // ---------- appearance: theme and center image ----------
+  function applyTheme() {
+    theme = THEMES.find((t) => t.id === state.settings.theme) || THEMES[0];
+    const style = el.wrap.style;
+    [['--pointer', theme.pointer], ['--hub-bg', theme.hub], ['--hub-ink', theme.hubInk]].forEach(([prop, value]) => {
+      if (value) style.setProperty(prop, value); else style.removeProperty(prop);
+    });
+    const input = el.themes.querySelector(`input[value="${theme.id}"]`);
+    if (input) input.checked = true;
+    renderBitmap();
+    draw();
+  }
+
+  function buildThemePicker() {
+    el.themes.replaceChildren(...THEMES.map((t) => {
+      const label = document.createElement('label');
+      label.className = 'theme';
+      const input = document.createElement('input');
+      input.type = 'radio';
+      input.name = 'theme';
+      input.value = t.id;
+      input.addEventListener('change', () => {
+        state.settings.theme = t.id;
+        applyTheme();
+        saveState();
+      });
+      const swatch = document.createElement('span');
+      swatch.className = 'theme-swatch';
+      const step = 360 / Math.max(t.colors.length * 2, 6);
+      const stops = [];
+      for (let i = 0; i * step < 360; i++) {
+        stops.push(`${t.colors[i % t.colors.length]} ${i * step}deg ${(i + 1) * step}deg`);
+      }
+      swatch.style.setProperty('background', `conic-gradient(${stops.join(', ')})`);
+      swatch.style.setProperty('border-color', t.rim || 'var(--surface)');
+      const name = document.createElement('span');
+      name.textContent = t.name;
+      label.append(input, swatch, name);
+      return label;
+    }));
+  }
+
+  function loadImage(src) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error('image decode failed'));
+      img.src = src;
+    });
+  }
+
+  function readAsDataUrl(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // Center-crops the file to a square, downsizes it and stores it as a data: URL
+  // (blob: URLs are not allowed by the CSP, data: is).
+  async function setCenterImage(file) {
+    if (!file || !/^image\//.test(file.type)) {
+      toast('Это не картинка');
+      return;
+    }
+    let data;
+    try {
+      const src = await loadImage(await readAsDataUrl(file));
+      const w = src.naturalWidth || IMAGE_PX;
+      const h = src.naturalHeight || IMAGE_PX;
+      const side = Math.min(w, h);
+      const cv = document.createElement('canvas');
+      cv.width = IMAGE_PX;
+      cv.height = IMAGE_PX;
+      const ctx = cv.getContext('2d');
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(src, (w - side) / 2, (h - side) / 2, side, side, 0, 0, IMAGE_PX, IMAGE_PX);
+      data = cv.toDataURL('image/webp', 0.9);
+      if (!data.startsWith('data:image/webp')) data = cv.toDataURL('image/png');
+      hubImage = await loadImage(data);
+    } catch {
+      toast('Не удалось открыть картинку');
+      return;
+    }
+    try {
+      localStorage.setItem(IMAGE_KEY, data);
+      toast('Картинка установлена');
+    } catch {
+      toast('Картинка установлена, но не сохранится после перезагрузки: не хватает места в браузере');
+    }
+    updateImageControls(data);
+    renderBitmap();
+    draw();
+  }
+
+  function removeCenterImage() {
+    hubImage = null;
+    try { localStorage.removeItem(IMAGE_KEY); } catch { /* ignore */ }
+    updateImageControls(null);
+    renderBitmap();
+    draw();
+  }
+
+  function updateImageControls(src) {
+    const has = Boolean(src);
+    el.imageThumb.hidden = !has;
+    if (has) el.imageThumb.src = src; else el.imageThumb.removeAttribute('src');
+    el.imageRemoveBtn.disabled = !has;
+    el.imageSize.disabled = !has;
+    el.imageRotate.disabled = !has;
+    el.wrap.classList.toggle('has-image', has);
+    el.wrap.style.setProperty('--hub-size', `${state.settings.imageSize * 100}%`);
+  }
+
+  async function restoreCenterImage() {
+    let data = null;
+    try { data = localStorage.getItem(IMAGE_KEY); } catch { /* ignore */ }
+    if (!data) {
+      updateImageControls(null);
+      return;
+    }
+    try {
+      hubImage = await loadImage(data);
+      updateImageControls(data);
+      renderBitmap();
+      draw();
+    } catch {
+      updateImageControls(null);
+    }
+  }
+
+  function setupAppearance() {
+    const size = Number(state.settings.imageSize);
+    state.settings.imageSize = Number.isFinite(size) ? Math.min(0.5, Math.max(0.2, size)) : DEFAULT_SETTINGS.imageSize;
+    buildThemePicker();
+    el.imageSize.value = String(Math.round(state.settings.imageSize * 100));
+    el.imageSizeOut.textContent = `${el.imageSize.value}%`;
+    el.imageRotate.checked = state.settings.imageRotate;
+
+    el.imagePickBtn.addEventListener('click', () => el.imageFile.click());
+    el.imageFile.addEventListener('change', () => {
+      const file = el.imageFile.files && el.imageFile.files[0];
+      el.imageFile.value = '';
+      if (file) setCenterImage(file);
+    });
+    el.imageRemoveBtn.addEventListener('click', removeCenterImage);
+    el.imageSize.addEventListener('input', () => {
+      state.settings.imageSize = Number(el.imageSize.value) / 100;
+      el.imageSizeOut.textContent = `${el.imageSize.value}%`;
+      el.wrap.style.setProperty('--hub-size', `${el.imageSize.value}%`);
+      renderBitmap();
+      draw();
+      saveState();
+    });
+    el.imageRotate.addEventListener('change', () => {
+      state.settings.imageRotate = el.imageRotate.checked;
+      renderBitmap();
+      draw();
+      saveState();
+    });
+
+    // Drop an image file straight onto the wheel
+    const hasFiles = (e) => e.dataTransfer && Array.from(e.dataTransfer.types || []).includes('Files');
+    el.wrap.addEventListener('dragover', (e) => {
+      if (!hasFiles(e) || spinning) return;
+      e.preventDefault();
+      el.wrap.classList.add('drop-target');
+    });
+    el.wrap.addEventListener('dragleave', () => el.wrap.classList.remove('drop-target'));
+    el.wrap.addEventListener('drop', (e) => {
+      el.wrap.classList.remove('drop-target');
+      if (!hasFiles(e) || spinning) return;
+      e.preventDefault();
+      setCenterImage(e.dataTransfer.files[0]);
+    });
+
+    applyTheme();
+    restoreCenterImage();
   }
 
   // ---------- tabs ----------
@@ -660,8 +939,8 @@
       toast(removed ? `Убрано повторов: ${removed}` : 'Повторов нет');
     });
 
-    el.spinBtn.addEventListener('click', spin);
-    el.wheel.addEventListener('click', spin);
+    // The whole wheel (canvas, pointer, hub) is one big spin button
+    el.wrap.addEventListener('click', spin);
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
         e.preventDefault();
@@ -719,6 +998,7 @@
 
     setupTabs();
     setupPwa();
+    setupAppearance();
     onEntriesChanged();
     renderResults();
 
