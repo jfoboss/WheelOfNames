@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.2.0](https://github.com/jfoboss/WheelOfNames/compare/v1.1.0...v1.2.0) (2026-09-28)
+
+
+### Features
+
+* gallery of built-in center images ([0b7ac82](https://github.com/jfoboss/WheelOfNames/commit/0b7ac82a9965dde07dadc35cb6bd916abbc25ca6))
+* imageboard joke theme with an original doodle mascot ([d44868b](https://github.com/jfoboss/WheelOfNames/commit/d44868b914f099ab7e11f32fa073975620a7a4fe))
+* тема «Имиджборд» и галерея готовых картинок для центра ([fbd8207](https://github.com/jfoboss/WheelOfNames/commit/fbd8207582f903cce065e6beb359f2e8a1f50d9a))
+
 ## [1.1.0](https://github.com/jfoboss/WheelOfNames/compare/v1.0.0...v1.1.0) (2026-09-28)
 
 
