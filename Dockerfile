@@ -3,7 +3,8 @@
 ARG BASE_IMAGE=nginxinc/nginx-unprivileged:1.28-alpine
 FROM ${BASE_IMAGE}
 
-# The version goes into the service worker cache name; every build => clients get an update
+# The version goes into the service worker cache name (every build => clients get an update)
+# and into the page footer
 ARG APP_VERSION=""
 
 COPY nginx/default.conf /etc/nginx/conf.d/default.conf
@@ -12,7 +13,7 @@ COPY app/ /usr/share/nginx/html/
 
 USER root
 RUN v="${APP_VERSION:-$(date -u +%Y%m%d%H%M%S)}" \
- && sed -i "s/'__APP_VERSION__'/'${v}'/" /usr/share/nginx/html/sw.js \
+ && sed -i "s/'__APP_VERSION__'/'${v}'/" /usr/share/nginx/html/sw.js /usr/share/nginx/html/app.js \
  && rm -f /usr/share/nginx/html/50x.html \
  && chmod -R a+rX /usr/share/nginx/html /etc/nginx/snippets
 USER 101

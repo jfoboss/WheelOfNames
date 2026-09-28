@@ -7,7 +7,6 @@
 
 * gallery of built-in center images ([0b7ac82](https://github.com/jfoboss/WheelOfNames/commit/0b7ac82a9965dde07dadc35cb6bd916abbc25ca6))
 * imageboard joke theme with an original doodle mascot ([d44868b](https://github.com/jfoboss/WheelOfNames/commit/d44868b914f099ab7e11f32fa073975620a7a4fe))
-* тема «Имиджборд» и галерея готовых картинок для центра ([fbd8207](https://github.com/jfoboss/WheelOfNames/commit/fbd8207582f903cce065e6beb359f2e8a1f50d9a))
 
 ## [1.1.0](https://github.com/jfoboss/WheelOfNames/compare/v1.0.0...v1.1.0) (2026-09-28)
 
@@ -15,7 +14,6 @@
 ### Features
 
 * wheel themes, custom center image, spin by clicking anywhere on the wheel ([2d72e3e](https://github.com/jfoboss/WheelOfNames/commit/2d72e3e7cabb1359883f7ba762b0879f99fcf919))
-* темы колеса, своя картинка в центре, вращение кликом по всему колесу ([f518e1a](https://github.com/jfoboss/WheelOfNames/commit/f518e1a3b910e079e7e2284f487aab09e8213f55))
 
 ## [1.0.0](https://github.com/jfoboss/WheelOfNames/compare/v0.2.0...v1.0.0) (2026-09-28)
 
